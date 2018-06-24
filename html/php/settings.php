@@ -604,23 +604,4 @@
 		parent.ws.send('getVersion');
 	}, 1000);
 
-
-	// --- Misc --- //
-
-	/*ws.onmessage = function(dgram){
-		let msg = dgram.data.toString().split(':');
-		let cmd = msg[0];
-		if (cmd == 'updateReading') {
-			updateFiller(msg[1], msg[2], msg[3]);
-		} else if (cmd == 'updateProtocol') {
-			updateProtocol(parseInt(msg[1]));
-		} else if (cmd == 'can') {
-			updateCanMonitor(msg);
-		} else if (cmd == 'updateVersion') {
-			version.innerHTML = "Version: " + msg[1];
-		}
-	}*/
-
-
-
 </script>

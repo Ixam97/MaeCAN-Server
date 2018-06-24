@@ -53,30 +53,45 @@
 		</div>
 
 		<div id="alertbox" style="display: none;">
-			<div class="alertbox" >
-				<div class="sub_alertbox" id="connection_lost" style="display: none;">
+
+				<div class="alertbox" id="connection_lost" style="display: none;">
 					<p style="height: 130px;">Verbindung zum Socket-Server wurde unterbrochen! Verbindung erneut herstellen?</p>
 					<div id="reconnect" class="button">Verbindungsversuch</div>
 				</div>
-				<div class="sub_alertbox" id="update_available" style="display: none;">
+
+				<div class="alertbox" id="update_available" style="display: none;">
 					<p id="update_available_p"></p>
 					<div class="button" id="confirm_update">OK</div>
+				<div class="button close_alert">Schließen</div>
 				</div>
-				<div class="sub_alertbox" id="up_to_date" style="display: none;">
+
+				<div class="alertbox" id="up_to_date" style="display: none;">
 					<p id="up_to_date_p"></p>
+				<div class="button close_alert">Schließen</div>
 				</div>
-				<div class="sub_alertbox" id="restart" style="display: none;">
+
+				<div class="alertbox" id="restart" style="display: none;">
 					<p>Server wirklich neu starten?</p>
 					<div id="confirm_restart" class="button">OK</div>
+				<div class="button close_alert">Schließen</div>
 				</div>
-				<div class="sub_alertbox" id="shutdown" style="display: none;">
+
+				<div class="alertbox" id="shutdown" style="display: none;">
 					<p>Server wirklich herunterfahren?</p>
 					<div id="confirm_shutdown" class="button">OK</div>
+				<div class="button close_alert">Schließen</div>
 				</div>
-				<div class="sub_alertbox" id="mfx" style="display: none;">
+
+				<div class="alertbox" id="mfx" style="display: none;">
 					<p id="mfx_p"></p>
+				<div class="button close_alert">Schließen</div>
 				</div>
-				<div class="button" id="close_alert">Schließen</div>
+
+				<div class="alertbox" id="del_loco" style="display: none;">
+					<p id="del_loco_p"></p>
+				<div class="button" id="del_loco_confirm">Löschen</div>
+				<div class="button close_alert">Abbrechen</div>
+
 			</div>
 		</div>
 
@@ -105,7 +120,8 @@
 
 			const bookmark = document.getElementsByClassName('bookmark');
 			const content_frames = document.getElementsByClassName('content_frame');
-			const sub_alertboxes = document.getElementsByClassName('sub_alertbox');
+			const alertboxes = document.getElementsByClassName('alertbox');
+			const close_alert = document.getElementsByClassName('close_alert');
 
 
 			// --- Elemente ---//
@@ -125,7 +141,6 @@
 			const confirm_update = document.getElementById('confirm_update');
 			const confirm_restart = document.getElementById('confirm_restart');
 			const confirm_shutdown = document.getElementById('confirm_shutdown');
-			const close_alert = document.getElementById('close_alert');
 			const restart = document.getElementById('restart');
 			const shutdown = document.getElementById('shutdown');
 			const up_to_date = document.getElementById('up_to_date');
@@ -133,7 +148,7 @@
 			const update_available = document.getElementById('update_available');
 			const update_available_p = document.getElementById('update_available_p');
 		
-
+			var loco_to_delete;
 
 			let power = false;
 
@@ -156,8 +171,8 @@
 			function hideAlertbox(){
 				hide(alertbox);
 				wrapper.style.filter = 'none';
-				for (let i = 0; i < sub_alertboxes.length; i++) {
-					hide(sub_alertboxes[i]);
+				for (let i = 0; i < alertboxes.length; i++) {
+					hide(alertboxes[i]);
 				}
 			}
 
@@ -186,6 +201,12 @@
 			function mfxAlert(name){
 				showAlertbox(mfx);
 				mfx_p.innerHTML = 'MFX/M4-Lok "' + name + '" wurde der Lokliste hinzugefügt!';
+			}
+
+			function delLocoAlert(index, name){
+				showAlertbox(del_loco);
+				loco_to_delete = index;
+				del_loco_p.innerHTML = 'Lok "' + name + '" wirklich löschen?';
 			}
 
 			for (let i = 0; i < bookmark.length; i++) (function(i){
@@ -225,10 +246,13 @@
 
 			//--- Alert-Fenster onClicks ---//
 
-			close_alert.onclick = function(){
-				hideAlertbox();
-			};
 
+			for (let i = 0; i < close_alert.length; i++){
+				close_alert[i].onclick = function(){
+					hideAlertbox();
+				};
+			}
+			
 			reconnect.onclick = function(){
 				location.reload();
 			};
@@ -249,6 +273,11 @@
 				hideAlertbox();
 				send('shutdown');
 			};
+
+			del_loco_confirm.onclick = () => {
+				send(`deleteLoco:${loco_to_delete}`);
+				hideAlertbox();
+			}
 
 
 			//--- Viewport-Änderung ---//

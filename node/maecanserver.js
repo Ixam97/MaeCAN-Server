@@ -518,6 +518,35 @@ function sendLocoInfo(loco_name, rec_hash) {
   }
 }
 
+function writeCV(uid, cv_n, value) {
+  // CV-Werte schreiben
+
+  let valid = false;
+  if (uid <= 0x03ff) {
+    // Motorola
+    if (cv_n > 0 && cv_n <= 256) {
+      
+    } else {
+      console.log('Exceeding MM2 CV space.')
+    }
+  } else if (uid >= 0xc000 && uid <= 0xffff) {
+    // DCC
+    if (cv_n > 0 && cv_n <= 1024) {
+      if (value >= 0 && value <= 255) {
+        valid = true;
+      }
+    } else {
+      console.log('Exceeding DCC CV space.')
+    }
+  } else {
+    console.log('Unknown Protokoll, not writing CV.')
+  }
+
+  if (valid) {
+    udpClient.send(new Buffer([0, WRITE_CONFIG, 3, 0, 8, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, cv_n >> 8, cv_n & 0xff, value, 0]), d_port, ip)
+  }
+}
+
 
 //----------------------------------------------------------------------------------//
 // MFX-Behandlung:

@@ -368,7 +368,7 @@
 
 	delete_loco.onclick = function(){
 		if (current_loco_index >= 0) {
-			parent.send(`deleteLoco:${current_loco_index}`);
+			parent.delLocoAlert(current_loco_index, current_loco.name);
 		}
 	};
 
