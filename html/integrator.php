@@ -13,9 +13,6 @@
 
 	</head>
 	<body>
-
 		<?php include 'php/'.$page.'.php'; ?>
-
-		<!--<script type="text/javascript" src="js/main.js?41452857"></script>-->
 	</body>
 </html>

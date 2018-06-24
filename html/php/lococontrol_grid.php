@@ -104,7 +104,18 @@
 <script type="text/javascript" src="js/websocket.js"></script>
 
 <script type="text/javascript">
-	//------------------------------LINKS-------------------------------------//
+/*
+* ----------------------------------------------------------------------------
+* "THE BEER-WARE LICENSE" (Revision 42):
+* <ixam97@ixam97.de> wrote this file. As long as you retain this notice you
+* can do whatever you want with this stuff. If we meet some day, and you think
+* this stuff is worth it, you can buy me a beer in return.
+* Maximilian Goldschmidt
+* ----------------------------------------------------------------------------
+* MäCAN-Server, 2018-06-24
+* https://github.com/Ixam97/MaeCAN-Server/
+* ----------------------------------------------------------------------------
+*/
 
 	var sides = ['left', 'right'];
 

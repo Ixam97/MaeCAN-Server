@@ -1,11 +1,15 @@
 /*
-MäCAN Node.js Server
-By Maximilian Goldschmidt (cc)
-Do what ever you want with this, but keep this header!
-
-Last edited: 01.16.2018
+* ----------------------------------------------------------------------------
+* "THE BEER-WARE LICENSE" (Revision 42):
+* <ixam97@ixam97.de> wrote this file. As long as you retain this notice you
+* can do whatever you want with this stuff. If we meet some day, and you think
+* this stuff is worth it, you can buy me a beer in return.
+* Maximilian Goldschmidt
+* ----------------------------------------------------------------------------
+* MäCAN-Server, 2018-06-24
+* https://github.com/Ixam97/MaeCAN-Server/
+* ----------------------------------------------------------------------------
 */
-
 
 
 //----------------------------------------------------------------------------------//
@@ -13,7 +17,7 @@ Last edited: 01.16.2018
 //----------------------------------------------------------------------------------//
 
 const SYSTEM_CMD = 0x00
-  //Subbefehle:
+  // Subbefehle:
   const SYS_STOP = 0x00
   const SYS_GO = 0x01
   const SYS_HALT = 0x02
@@ -122,10 +126,10 @@ var gbox_uid;
 
 
 //----------------------------------------------------------------------------------//
-//VARIABLEN FÜR DEVICE INFOS:
+// VARIABLEN FÜR DEVICE INFOS:
 var config_buffer = [];
 
-//Loknamen data query
+// Loknamen data query
 var loknamen_request = false;
 
 var lokinfo_request = 0;
@@ -148,7 +152,7 @@ var fs = require('fs');
 
 
 //----------------------------------------------------------------------------------//
-//MFX-Puffer
+// MFX-Puffer
 
 var last_mfx_call = [];
 var mfx_buffer = [];
@@ -170,7 +174,7 @@ function toUnsignedString(number){
 }
 
 function hex2a(hexx) {
-  //hex to string
+  // hex to string
 
     var hex = hexx.toString();//force conversion
     var str = '';
@@ -211,7 +215,7 @@ function crc16(s) {
 // CAN-Gerätekonfiguration:
 
 function statusChanelColor(value){
-  //Berechnet die Farbe für einen Statusbalken aus den jeweils zuständigen Bits.
+  // Berechnet die Farbe für einen Statusbalken aus den jeweils zuständigen Bits.
 
   var color = 'rgb(255,255,255)';
   var red = 85 * (value >> 6);
@@ -399,7 +403,7 @@ function setNAZ() {
 
 function sendDataQueryFrames(data_string, rec_hash) { 
   // Datenpakete versenden (z.B. Lokliste etc.)
-  //Padding durch 0x00
+  // Padding durch 0x00
 
   console.log(data_string);
   let length = data_string.length;
@@ -416,10 +420,10 @@ function sendDataQueryFrames(data_string, rec_hash) {
   let data = [0,0,0,0,0,0,0,0];
   let crc = crc16(data_string);
 
-  //Paketlänge und CRC sendn
+  // Paketlänge und CRC sendn
   udpClient.send(new Buffer([0x00, CONFIG_DATA_STREAM, rec_hash >> 8, rec_hash & 0xff, 0x06, 0x00, 0x00, length >> 8, length & 0xff, crc >> 8, crc & 0xff, 0x00, 0x00]), d_port, ip);
 
-  //Daten senden
+  // Daten senden
   for (let i = 0; i < packets; i++){
     for (let j = 0; j < 8; j++) {
       if (data_string[(i*8)+j]){
@@ -440,18 +444,18 @@ function sendLocoNames(loco_index, loco_count, rec_hash){
 
   console.log("Loknamen-request for " + loco_count + " locos, starting at index " + loco_index + ".");
 
-  //Lokliste laden
+  // Lokliste laden
   let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
 
-  //Antwort auf Anfrage
+  // Antwort auf Anfrage
   udpClient.send(new Buffer([0x00, DATA_QUERRY + 1, 0x03, 0x00, 0x08, loco_index.toString().charCodeAt(0), 0x20, loco_count.toString().charCodeAt(0), 0, 0, 0, 0x00, 0x00]), d_port, ip);
   
-  //Sind genug Einträge vorhanden?
+  // Sind genug Einträge vorhanden?
   if (loco_count > locolist.length) {
     loco_count = locolist.length;
   }
 
-  //String zusammenbauen
+  // String zusammenbauen
   let loco_string = "[lokomotive]\x0a";
 
   for (let i = loco_index; i < loco_count + loco_index; i++) {
@@ -472,7 +476,7 @@ function sendLocoInfo(loco_name, rec_hash) {
 
   console.log("Lokinfo-request for " + loco_name + ".");
 
-  //Lokliste laden
+  // Lokliste laden
   let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
   
   let found_loco = false;
@@ -489,11 +493,11 @@ function sendLocoInfo(loco_name, rec_hash) {
   }
 
   if(found_loco) {
-    //Antwort auf Anfrage
+    // Antwort auf Anfrage
     udpClient.send(new Buffer([0x00, DATA_QUERRY + 1, 0x03, 0x00, 0x08, 0, 0, 0, 0, 0, 0, 0, 0]), d_port, ip);
 
 
-    //String zusammenbauen
+    // String zusammenbauen
     let data_string = "[lokomotive]\x0alok\x0a .uid=0x" + loco.uid.toString(16) + "\x0a .name=" + loco.name + "\x0a .adresse=0x" + loco.adress.toString(16) + "\x0a .typ=" + loco.typ;
     if (loco.typ == "mfx") {
       data_string += ("\x0a .mfxuid=" + loco.mfxuid.toString(16));
@@ -598,8 +602,8 @@ function addMfxLocoToList(mfxuid) {
       }
     });
 
-    readMfxConfig(loco.uid, 3, 1, 0x10); // Loknamen auslesen.
-    //readMfxConfig(loco.uid, 4, 1, 9); // Blocktabelle auslesen.
+    readMfxConfig(loco.uid, 3, 1, 0x10); // Loknamen auslesen, weiter in processMfxBuffer() ...
+
   } else {
     console.log('Loco already exists!');
   }
@@ -637,16 +641,10 @@ function fillMfxBuffer(data) {
   let cv_i = cv >> 10;
   let cv_n = cv & 0x3ff;
 
-  //let _buffer = []
-
-  //console.log(cv_n + ', ' + cv_i);
-
   mfx_buffer[0] = cv_n;
   mfx_buffer[cv_i] = data[6];
   if (cv_i == last_mfx_call[1]) {
-    console.log(mfx_buffer);
     processMfxBuffer();
-    // Etwas mit dem Puffer machen ...
   }
 }
 
@@ -705,11 +703,6 @@ function processMfxBuffer() {
     } else {
       for (let i = 0; i < 16; i++) {
         if (cv_n == locolist[index].mfxadr.func + (i * 3)) {
-          /*if (mfx_buffer[1] != 2) {
-            locolist[index].functions[i] = function_table[mfx_buffer[1]];
-          } else {
-            locolist[index].functions[i] = 50 + i;
-          }*/
           if (mfx_buffer[2]) {
             if (i == 0) locolist[index].functions[i] = 1;
             else locolist[index].functions[i] = 50 + i;
@@ -722,7 +715,6 @@ function processMfxBuffer() {
             }
           }
         }
-        //break;
       }
     }
   }
@@ -756,46 +748,31 @@ function mfxDelete(sid) {
   udpClient.send(new Buffer([0, MFX_VRIFY, 3, 0, 6, 0, 0, 0, 0, (sid & 0xFF00) >> 8, (sid & 0x00FF), 0, 0]), d_port, ip);
 }
 
-/*function buildLocoName(data) {
-  let uid = ((data[0] << 24)>>>0) + ((data[1] << 16)>>>0) + ((data[2] << 8)>>>0) + data [3];
-  if (data[6]){
-    let locolist = require('../html/config/locolist');
-    for (let i = 0; i < locolist.length; i++) {
-      if (locolist[i].uid == uid){
-        locolist[i].name += String.fromCharCode(data[6]);
-        break;
-      }
-    }
-    locolist = locolist.sort((a, b) => {
-      if (a.name < b.name) return -1;
-      if (a.name > b.name) return 1;
-      return 0;
-    })
-    
-    fs.writeFile('../html/config/locolist.json', JSON.stringify(locolist, null, 2), function(){
-    });
-  }
-}*/
-
 
 //----------------------------------------------------------------------------------//
 // Standard-CAN-Befehle:
 
-function stop() { // STOP an den GFP senden.
+function stop() { 
+  // STOP an den GFP senden.
+
   udpClient.send(new Buffer([0x00, SYSTEM_CMD, 0x03, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, SYS_STOP, 0x00, 0x00, 0x00]), d_port, ip);
   console.log('STOP')
 }
 
-function go() { // Go an den GFP senden.
+function go() { 
+  // Go an den GFP senden.
+
   udpClient.send(new Buffer([0x00, SYSTEM_CMD, 0x03, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, SYS_GO, 0x00, 0x00, 0x00]), d_port, ip);
   console.log('GO');
   if (master) {
-    //bindKnownMfx();
-    //setNAZ();
+    bindKnownMfx();
+    setNAZ();
   }
 }
 
-function ping() { // Ping aussenden.  
+function ping() { 
+  // Ping aussenden.  
+
   udpClient.send(new Buffer([0, PING,3,0,0,0,0,0,0,0,0,0,0]), d_port, ip);
   if (master) udpClient.send(new Buffer([0, PING + 1,3,0,8,0,0,0,0,0,0,0xff,0xff]), d_port, ip)
   console.log('Ping sent.');
@@ -807,7 +784,7 @@ function ping() { // Ping aussenden.
 
 function addLocoFromMsg(msg_string) {
   let cmd = msg_string.split(":")[0]
-  let new_loco = JSON.parse(msg_string.substring(msg_string.indexOf("{"), msg_string.indexOf("}")+1));
+  let new_loco = JSON.parse(msg_string.substring(msg_string.indexOf("$")+1, msg_string.indexOf("§")));
   let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
 
   if (cmd == "addLoco") {
@@ -865,7 +842,6 @@ udpServer.on('listening', () => {
 
 udpServer.bind(l_port);
 ping();
-//bindKnownMfx();
 
 if (master) {
   setProtocol(local_config.protocol);
@@ -895,7 +871,7 @@ wsServer.on('request', function(request){
 	});
 
 
-	//Befehle vom WebSocet-Client verarbeiten:
+	// Befehle vom WebSocet-Client verarbeiten:
 	connection.on('message', function(dgram){
 
 		var msg = dgram.utf8Data.split(':');
@@ -908,33 +884,33 @@ wsServer.on('request', function(request){
 		var value_high = (value & 0xFF00) >> 8;
 		var value_low = (value & 0x00FF);
 
-		if (cmd == 'stop') {			// STOP-Taste
+		if (cmd == 'stop') {
       stop();
       
-		} else if (cmd == 'go') {		// GO-Taste
+		} else if (cmd == 'go') {
       go();
       
 		} else if (cmd == 'setSpeed') {
-      udpClient.send(new Buffer([0, 8, 3, 0, 6, 0, 0, uid_high, uid_low, value_high, value_low, 0, 0]), d_port, ip);
+      udpClient.send(new Buffer([0, LOCO_SPEED, 3, 0, 6, 0, 0, uid_high, uid_low, value_high, value_low, 0, 0]), d_port, ip);
       
 		} else if (cmd == 'getSpeed') {
-			udpClient.send(new Buffer([0, 8, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
+			udpClient.send(new Buffer([0, LOCO_SPEED, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
     
     } else if (cmd == 'lokNothalt') {
-			udpClient.send(new Buffer([0, 0, 3, 0, 5, 0, 0, uid_high, uid_low, 3, 0, 0, 0]), d_port, ip);
+			udpClient.send(new Buffer([0, SYSTEM_CMD, 3, 0, 5, 0, 0, uid_high, uid_low, SYS_LOCO_EMERGENCY_STOP, 0, 0, 0]), d_port, ip);
     
     } else if (cmd == 'setFn') {
-			udpClient.send(new Buffer([0, 0x0c, 3, 0, 6, 0, 0, uid_high, uid_low, value_high, value_low, 0, 0]), d_port, ip);
+			udpClient.send(new Buffer([0, LOCO_FN, 3, 0, 6, 0, 0, uid_high, uid_low, value_high, value_low, 0, 0]), d_port, ip);
     
     } else if (cmd == 'getFn') {
-			udpClient.send(new Buffer([0, 0x0c, 3, 0, 5, 0, 0, uid_high, uid_low, value, 0, 0, 0]), d_port, ip);
+			udpClient.send(new Buffer([0, LOCO_FN, 3, 0, 5, 0, 0, uid_high, uid_low, value, 0, 0, 0]), d_port, ip);
     
     } else if (cmd == 'toggleDir') {
-			udpClient.send(new Buffer([0, 0x0a, 3, 0, 5, 0, 0, uid_high, uid_low, 3, 0, 0, 0]), d_port, ip);
-			udpClient.send(new Buffer([0, 0x0a, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
+			udpClient.send(new Buffer([0, LOCO_DIR, 3, 0, 5, 0, 0, uid_high, uid_low, 3, 0, 0, 0]), d_port, ip);
+			udpClient.send(new Buffer([0, LOCO_DIR, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
     
     } else if (cmd == 'getDir') {
-			udpClient.send(new Buffer([0, 0x0a, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
+			udpClient.send(new Buffer([0, LOCO_DIR, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
     
     } else if (cmd == 'getStatus') {
       getStatus(msg[1], msg[2]);
@@ -983,6 +959,9 @@ wsServer.on('request', function(request){
       for (let i in clients){
         clients[i].sendUTF(`updateVersion:${version}`);
       }
+    
+    } else if (cmd == 'setConfigValue') {
+      udpClient.send(new Buffer([0x00, SYSTEM_CMD, 0x03, 0x00, 0x08, (msg[1] & 0xff000000)>> 24, (msg[1] & 0x00ff0000)>> 16, (msg[1] & 0x0000ff00) >> 8, msg[1] & 0x000000ff, SYS_STATUS, msg[2], (msg[3] & 0xff00) >> 8, msg[3] & 0x00ff]), d_port, ip);
     }
 	});
 });
@@ -1008,25 +987,30 @@ udpServer.on('message', (udp_msg, rinfo) => {
   let can_msg = 'can:' + cmd + ':' + hash + ':' + dlc + ':' + data;
 
   if (cmd == (SYSTEM_CMD + 1)) {
-  	var sub_cmd = parseInt(udp_msg[9]);
+    var sub_cmd = parseInt(udp_msg[9]);
+    
   	if (sub_cmd == SYS_STOP) {
   		ws_msg = 'stop';
   		power = false;
-  	} else if (sub_cmd == SYS_GO) {
+    
+    } else if (sub_cmd == SYS_GO) {
       if (master) {
         bindKnownMfx();
         setNAZ();
       }
   		ws_msg = 'go';
   		power = true;
-  	} else if (sub_cmd == SYS_LOCO_EMERGENCY_STOP){
+    
+    } else if (sub_cmd == SYS_LOCO_EMERGENCY_STOP){
       ws_msg = `updateSpeed:${uid}:${0}`;
+    
     } else if (sub_cmd == SYS_TRACK_PROTOCOL) {
       ws_msg = `updateProtocol:${data[5]}`;
       let config = require('./config.json');
       config.protocol = data[5];
       configUpdate(config);
-  	} else if (sub_cmd == SYS_STATUS) {
+    
+    } else if (sub_cmd == SYS_STATUS) {
       ws_msg = `updateReading:${uid}:${data[5]}:${(data[6] << 8) + data[7]}`;
     }
   
@@ -1055,13 +1039,13 @@ udpServer.on('message', (udp_msg, rinfo) => {
       setTimeout(() => udpClient.send(new Buffer([0,0x30,3,0,0,0,0,0,0,0,0,0,0]), d_port, ip), 20);
       setTimeout(() => {
         setNAZ();
-        //bindKnownMfx();
+        bindKnownMfx();
       }, 40);
     }
   
   } else if (cmd == (STATUS_CONFIG + 1)) {
+    // Statusdaten Konfiguration
 
-    // --- Statusdaten Konfiguration --- //
     if (dlc == 8) {
       if (hash == 0x301) {
         config_buffer = [];
@@ -1093,9 +1077,6 @@ udpServer.on('message', (udp_msg, rinfo) => {
       }
       bussy_fetching = false;
     }
-  
-  } else if (cmd == PING) {
-    //udpClient.send(new Buffer([0,0x31,3,0,8,0,0,0,0,0,1,0xff,0xff]), d_port, ip);
   
   } else if (cmd == (PING + 1)) {
   	let str_uid = toUnsignedString(uid);
@@ -1164,10 +1145,6 @@ udpServer.on('message', (udp_msg, rinfo) => {
 	  	clients[i].sendUTF(ws_msg);
 	  }
   }
-
-  for (let i in clients) {
-    //clients[i].sendUTF(can_msg);
-  }
 });
 
 
@@ -1175,6 +1152,7 @@ udpServer.on('message', (udp_msg, rinfo) => {
 // Periodischer Code:
 
 setInterval(() => ping(), 10000);
+  // Alle 10 Sekunden einen Ping senden
 
 setInterval(function(){
   // Gleisbox aufwecken, wenn keine MS2 vorhanden ist.
@@ -1193,6 +1171,8 @@ setInterval(function(){
 }, 1000);
 
 var data_fetcher = setInterval(function(){
+  // Configdaten aus CAN-Geräten auslesen
+
   var devices = require('../html/config/devices.json');
   //var devices = JSON.parse(fs.readFileSync('../html/config/devices.json'));
   for (var i = 0; i < devices.length; i++) {

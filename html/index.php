@@ -87,6 +87,18 @@
 		<script type="text/javascript" src="js/websocket.js"></script>
 		<script type="text/javascript">
 
+/*
+* ----------------------------------------------------------------------------
+* "THE BEER-WARE LICENSE" (Revision 42):
+* <ixam97@ixam97.de> wrote this file. As long as you retain this notice you
+* can do whatever you want with this stuff. If we meet some day, and you think
+* this stuff is worth it, you can buy me a beer in return.
+* Maximilian Goldschmidt
+* ----------------------------------------------------------------------------
+* MäCAN-Server, 2018-06-24
+* https://github.com/Ixam97/MaeCAN-Server/
+* ----------------------------------------------------------------------------
+*/
 
 			// --- Element-Arrays ---//
 
@@ -277,6 +289,16 @@
 					power = false;
 				} else if (cmd == 'foundMfx') {
 					mfxAlert(msg[1]);
+				} else if (msg[0] == 'updateLocolist') {
+					locolist.contentWindow.loadLocolist();
+				} else if (cmd == 'updateReading') {
+					settings.contentWindow.updateFiller(msg[1], msg[2], msg[3]);
+				} else if (cmd == 'updateProtocol') {
+					settings.contentWindow.updateProtocol(parseInt(msg[1]));
+				} else if (cmd == 'can') {
+					settings.contentWindow.updateCanMonitor(msg);
+				} else if (cmd == 'updateVersion') {
+					settings.contentWindow.version.innerHTML = "Version: " + msg[1];
 				}
 			}
 

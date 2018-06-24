@@ -7,9 +7,9 @@
 		</div>
 		<div id="sidebar_button_container">
 			<div class="button_active">CAN-Geräte</div>
-			<div class="button">CAN-Monitor</div>
+			<!--<div class="button">CAN-Monitor</div>-->
 			<div class="button">Lokbilder</div>
-			<div class="button">CV-Programmierung</div>
+			<!--<div class="button">CV-Programmierung</div>-->
 			<div class="button">Server-Einstellungen</div>
 		</div>
 	</div>
@@ -41,13 +41,13 @@
 	</div>
 
 
-	<!-- CAN-Monitor -->
+	<!-- CAN-Monitor
 
 	<div class="frame_content">
 		<h1>CAN-Monitor</h1>
 		<div class="icon_list console" id="can_monitor">
 		</div>
-	</div>
+	</div>-->
 
 	<!-- Loco icons -->
 	<div class="frame_content">
@@ -70,10 +70,10 @@
 	</div>
 
 
-	<!-- CV programming -->
+	<!-- CV programming
 	<div class="frame_content">
 		<h1>CV-Programmierung</h1>
-	</div>
+	</div>-->
 
 
 	<!-- Server settings -->
@@ -98,9 +98,20 @@
 </div>
 
 <script type="text/javascript" src="js/main.js"></script>
-<script type="text/javascript" src="js/websocket.js"></script>
 <script type="text/javascript">
 
+/*
+* ----------------------------------------------------------------------------
+* "THE BEER-WARE LICENSE" (Revision 42):
+* <ixam97@ixam97.de> wrote this file. As long as you retain this notice you
+* can do whatever you want with this stuff. If we meet some day, and you think
+* this stuff is worth it, you can buy me a beer in return.
+* Maximilian Goldschmidt
+* ----------------------------------------------------------------------------
+* MäCAN-Server, 2018-06-24
+* https://github.com/Ixam97/MaeCAN-Server/
+* ----------------------------------------------------------------------------
+*/
 
 	const buttons = document.getElementsByClassName('button');
 	const containers = document.getElementsByClassName('frame_content');
@@ -205,8 +216,8 @@
 		}
 	}
 
-	function createDropdownPoint(name, serial_number){
-		let obj_text = document.createTextNode(name + ' #' + serial_number);
+	function createDropdownPoint(name){
+		let obj_text = document.createTextNode(name);
 		let obj = document.createElement('div');
 		obj.setAttribute('class', 'can_dropdown_option');
 		obj.appendChild(obj_text);
@@ -282,6 +293,11 @@
 		}
 	}
 
+	function setConfigValue(uid, chanel, value) {
+		parent.ws.send(`setConfigValue:${uid}:${chanel}:${value}`);
+		console.log(`setConfigValue:${uid}:${chanel}:${value}`);
+	}
+
 	function createConfig(device) {
 		config.innerHTML = "";
 
@@ -302,9 +318,11 @@
 				for (let j = 0; j < chanel.num_options; j++) {
 					let option_name = document.createTextNode(chanel.options[j]);
 					let option = document.createElement('option');
+					option.setAttribute('value', j);
 					option.appendChild(option_name);
 					config_dropdown.appendChild(option);
 				}
+				config_dropdown.setAttribute('onchange', `setConfigValue(${device.uid},${chanel.chanel},config_chanel_${chanel.chanel}.value)`);
 				config.appendChild(config_dropdown);
 			} else {
 				let config_num = document.createElement('input');
@@ -316,6 +334,7 @@
 				config_num.setAttribute('max', chanel.end);
 				config_num.setAttribute('value', chanel.def_value);
 				config_num.setAttribute('style', "width: calc(100% - 60px); margin-right: 5px;");
+				config_num.setAttribute('onchange', `setConfigValue(${device.uid},${chanel.chanel},config_chanel_${chanel.chanel}.value)`);
 
 				let config_unit = document.createTextNode(chanel.unit);
 
@@ -353,19 +372,26 @@
 			if (this.status == 200){
 				devices = JSON.parse(this.responseText);
 				can_dropdown_container.innerHTML = '';
+				if (devices.length == 0) {
+					createDropdownPoint("Keine Geräte gefunden!");
+				}
 				for (let i = 0; i < devices.length; i++) {
-					createDropdownPoint(devices[i].name, devices[i].serial_number);
+					createDropdownPoint(devices[i].name + " #" + devices[i].serial_number);
 				}
 				let can_dropdown_option = document.getElementsByClassName('can_dropdown_option');
+				
 				for (let i = 0; i < can_dropdown_option.length; i++) ((i)=>{
-					can_dropdown_option[i].onclick = function(){
-						dropdown_visible = false;
-						can_dropdown_container.setAttribute('class', 'dropdown');
-						can_dropdown_button.setAttribute('class', 'button');
-						showDeviceInfo(devices[i]);
-						visible_device = devices[i];
+					if (devices.length) {
+						can_dropdown_option[i].onclick = function(){
+							dropdown_visible = false;
+							can_dropdown_container.setAttribute('class', 'dropdown');
+							can_dropdown_button.setAttribute('class', 'button');
+							showDeviceInfo(devices[i]);
+							visible_device = devices[i];
+						}
 					};
-				})(i);				
+				})(i);
+							
 			}
 		};
 		device_request.send();
@@ -385,7 +411,7 @@
 		if (!(readings.offsetParent === null) && devices) {
 			if (visible_device.status_chanels){
 				for (let j = 0; j < visible_device.status_chanels; j++){
-					send(`getStatus:${visible_device.uid}:${visible_device.status_chanels_info[j].chanel}`);
+					parent.ws.send(`getStatus:${visible_device.uid}:${visible_device.status_chanels_info[j].chanel}`);
 				}
 			}
 		}
@@ -438,7 +464,7 @@
 	}
 
 	download_icon.onclick = function() {
-		ws.send('downloadIcon:' + icon_link.value);
+		parent.ws.send('downloadIcon:' + icon_link.value);
 		icon_list_download.innerHTML = "";
 		icon_link.value = '';
 	}
@@ -526,7 +552,7 @@
 	}
 
 	clear_device_list.onclick = () => {
-		ws.send('clearDeviceList');
+		parent.ws.send('clearDeviceList');
 		can_dropdown_button.innerHTML = "Gerät auswählen";
 		hide(device_info);
 	}
@@ -569,19 +595,19 @@
 				}
 			}
 			console.log(`setProtocol:${_protocol}`)
-			ws.send(`setProtocol:${_protocol}`);
+			parent.ws.send(`setProtocol:${_protocol}`);
 		};
 	}
 
 	setTimeout(function(){
-		ws.send('getProtocol');
-		ws.send('getVersion');
+		parent.ws.send('getProtocol');
+		parent.ws.send('getVersion');
 	}, 1000);
 
 
 	// --- Misc --- //
 
-	ws.onmessage = function(dgram){
+	/*ws.onmessage = function(dgram){
 		let msg = dgram.data.toString().split(':');
 		let cmd = msg[0];
 		if (cmd == 'updateReading') {
@@ -593,7 +619,7 @@
 		} else if (cmd == 'updateVersion') {
 			version.innerHTML = "Version: " + msg[1];
 		}
-	}
+	}*/
 
 
 

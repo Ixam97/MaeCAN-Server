@@ -1,10 +1,10 @@
 {
   "protocol": 6,
-  "new_registration_counter": 54,
+  "new_registration_counter": 55,
   "d_port": 15734,
   "l_port": 15733,
   "master": true,
   "server_path": "/www/MaeCAN-Server/",
   "ip": "localhost",
-  "version": "2018-06-23.3"
+  "version": "2018-06-24.1"
 }

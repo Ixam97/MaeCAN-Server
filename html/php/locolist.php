@@ -1,5 +1,3 @@
-
-
 <div class="subcontainer" id="settings_container">
 	<div id="sidebar">
 		<div class="button" id="sidebar_show_button" style="display: none;">
@@ -63,16 +61,16 @@
 			<input id="adress" type="number" class="text_input" min="1" max="2048" value="1">
 
 			<p>Anfahrverz.:</p>
-			<input id="av" type="number" class="text_input"  min="0" max="255" value="60" disabled>
+			<input id="av" type="number" class="text_input"  min="0" max="255" value="60" >
 
 			<p>Bremsverz.:</p>
-			<input id="bv" type="number" class="text_input"  min="0" max="255" value="40" disabled>
+			<input id="bv" type="number" class="text_input"  min="0" max="255" value="40" >
 
 			<p>Vmax:</p>
-			<input id="vmax" type="number" class="text_input"  min="0" max="255" value="255" disabled>
+			<input id="vmax" type="number" class="text_input"  min="0" max="255" value="255" >
 
 			<p>Vmin:</p>
-			<input id="vmin" type="number" class="text_input"  min="0" max="255" value="3" disabled>
+			<input id="vmin" type="number" class="text_input"  min="0" max="255" value="3" >
 
 			<p>Tacho:</p>
 			<input id="tacho" type="number" class="text_input"  min="0" max="300" value="120" disabled>
@@ -123,8 +121,20 @@
 </div>
 
 <script type="text/javascript" src="js/main.js"></script>
-<script type="text/javascript" src="js/websocket.js"></script>
 <script type="text/javascript">
+
+/*
+* ----------------------------------------------------------------------------
+* "THE BEER-WARE LICENSE" (Revision 42):
+* <ixam97@ixam97.de> wrote this file. As long as you retain this notice you
+* can do whatever you want with this stuff. If we meet some day, and you think
+* this stuff is worth it, you can buy me a beer in return.
+* Maximilian Goldschmidt
+* ----------------------------------------------------------------------------
+* MäCAN-Server, 2018-06-24
+* https://github.com/Ixam97/MaeCAN-Server/
+* ----------------------------------------------------------------------------
+*/
 
 	const containers = document.getElementsByClassName('frame_content');
 	const loco_button = document.getElementsByClassName('loco_button');
@@ -192,9 +202,13 @@
 		current_loco = loco_template;
 		current_loco_index = -1;
 
-		name.value = "";
-		protocol_dropdown.value = "dcc";
-		adress.value = 1;
+		name.value = current_loco.name;
+		protocol_dropdown.value = current_loco.typ;
+		adress.value = current_loco.adress;
+		av.value = current_loco.av;
+		bv.value = current_loco.bv;
+		vmax.value = current_loco.vmax;
+		vmin.value = current_loco.vmin;
 		protocol_dropdown.disabled = false;
 		adress.disabled = false;
 
@@ -276,6 +290,20 @@
 		}
 	}
 
+	function applyCurrentLoco() {
+		current_loco.name = name.value;
+		current_loco.typ = protocol_dropdown.value;
+		current_loco.adress = adress.value;
+		if (current_loco.typ == "dcc") {
+			current_loco.uid = parseInt(current_loco.adress) + 0xc000;
+		} else {
+			current_loco.uid = current_loco.adress;
+		}
+		current_loco.av = av.value;
+		current_loco.bv = bv.value;
+		current_loco.vmax = vmax.value;
+	}
+
 	/*function setAvailableSettings() {
 		let protocol = protocol_dropdown.value;
 		if (protocol != "dcc") {
@@ -314,36 +342,33 @@
 	// --- Eingabe --- //
 
 	save_loco.onclick = function(){
-		let loco_name = name.value;
-		let loco_adress = adress.value;
-		let loco_type = protocol_dropdown.value;
 
-		current_loco.name = loco_name;
-		current_loco.typ = loco_type;
-		current_loco.adress = loco_adress;
-		if (loco_type == "dcc") {
-			current_loco.uid = loco_adress + 0xc000;
+		if (name.value.indexOf('$') > -1 || name.value.indexOf('§') > -1) {
+			// Ungültiger Lokname
+		} else if ( av.value > 255 || bv.value > 255 || vmax.value > 255 || vmin.value > 255 || tacho.value > 255) {
+			// Ungültige Config-Werte.
 		} else {
-			current_loco.uid = loco_adress;
+			applyCurrentLoco();
+
+			loco_string = JSON.stringify(current_loco);
+
+			console.log(loco_string);
+			
+			if (current_loco_index == -1 ) {
+				parent.send(`addLoco:$${loco_string}§`);
+			} else {
+				parent.send(`updateLoco:${current_loco_index}:$${loco_string}§`);
+			}
 		}
-
-		loco_string = JSON.stringify(current_loco);
-
-		console.log(loco_string);
-		
-		if (current_loco_index == -1 ) {
-			send(`addLoco:${loco_string}`);
-		} else {
-			send(`updateLoco:${current_loco_index}:${loco_string}`);
-		}
-
-		//setTimeout( () => loadLocolist(), 100);
-
 	};
+
+	prog_loco.onclick = () => {
+		document.pare
+	}
 
 	delete_loco.onclick = function(){
 		if (current_loco_index >= 0) {
-			send(`deleteLoco:${current_loco_index}`);
+			parent.send(`deleteLoco:${current_loco_index}`);
 		}
 	};
 
@@ -356,13 +381,4 @@
 	}
 
 	loadLocolist();
-
-	ws.onmessage = function(dgram){
-		let msg = dgram.data.toString().split(':');
-		if (msg[0] == 'updateLocolist') {
-			loadLocolist();
-		}
-	}
-
-	// --- Bearbeiten einer vorhandenen Lok --- //
 </script>
