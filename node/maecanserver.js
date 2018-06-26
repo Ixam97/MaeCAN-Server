@@ -204,7 +204,7 @@ function crc16(s) {
 
     for (i = 0; i < s.length; i++) {
 
-        c = s.charCodeAt(i);
+        let c = s.charCodeAt(i);
         if (c > 255) {
             throw new RangeError();
         }
@@ -269,7 +269,7 @@ function buildDeviceInfo(buffer, device) {
 
     device.serial_number = (buffer[1][4] << 24) + (buffer[1][5] << 16) + (buffer[1][6] << 8) + buffer[1][7];
    
-    device.product_number = Buffer.from(new Buffer(buffer[2])).toString().replace(/\u0000/g,'');
+    device.product_number = new Buffer(buffer[2]).toString().replace(/\u0000/g,'');
 
     let name_buffer = [];
     for (let i = 3; i < buffer.length; i++) {
@@ -279,7 +279,7 @@ function buildDeviceInfo(buffer, device) {
         name_buffer[(i-3)*8+j] = data[j];
       }
     }
-    device.name = Buffer.from(new Buffer(name_buffer)).toString();
+    device.name = new Buffer(name_buffer).toString();
   } else {
     console.log("buildDeviceInfo Error! New Attempt soon ...");
   }
@@ -315,7 +315,7 @@ function buildStatusChanelInfo(buffer) {
     }
   }
 
-  buffer_string_array = Buffer.from(new Buffer(buffer_string)).toString().split('\u0000');
+  let buffer_string_array = new Buffer(buffer_string).toString().split('\u0000');
   status_chanel.name = buffer_string_array[0];
   status_chanel.start = buffer_string_array[1];
   status_chanel.end = buffer_string_array[2];
@@ -345,7 +345,7 @@ function buildConfigChanelInfo(buffer) {
       }
     }
     
-    buffer_string_array = Buffer.from(new Buffer(buffer_string)).toString().split('\u0000');
+    let buffer_string_array = new Buffer(buffer_string).toString().split('\u0000');
     config_chanel.description = buffer_string_array[0];
     config_chanel.options = [];
     for (let i = 0; i < config_chanel.num_options; i++) {
@@ -367,7 +367,7 @@ function buildConfigChanelInfo(buffer) {
       }
     }
     
-    buffer_string_array = Buffer.from(new Buffer(buffer_string)).toString().split('\u0000');
+    let buffer_string_array = new Buffer(buffer_string).toString().split('\u0000');
     config_chanel.description = buffer_string_array[0];
     config_chanel.start = buffer_string_array[1];
     config_chanel.end = buffer_string_array[2];
@@ -704,7 +704,7 @@ function processMfxBuffer() {
       data[i-1] = mfx_buffer[i];
     }
 
-    locolist[index].name = Buffer.from(new Buffer(data)).toString();
+    locolist[index].name = new Buffer(data).toString();
 
     readMfxConfig(last_mfx_call[2], 4, 1, 9);
 
@@ -887,7 +887,7 @@ server.listen(8080, function() {
 });
 
 var WebSocketServer = require('websocket').server;
-wsServer = new WebSocketServer({
+var wsServer = new WebSocketServer({
     httpServer: server
 });
 
@@ -1017,7 +1017,7 @@ udpServer.on('message', (udp_msg, rinfo) => {
   var dlc = parseInt(udp_msg[4]);
   var data = [parseInt(udp_msg[5]), parseInt(udp_msg[6]), parseInt(udp_msg[7]), parseInt(udp_msg[8]), parseInt(udp_msg[9]), parseInt(udp_msg[10]), parseInt(udp_msg[11]), parseInt(udp_msg[12])]
   var uid = ((data[0] << 24)>>>0) + ((data[1] << 16)>>>0) + ((data[2] << 8)>>>0) + data [3];
-   value = (parseInt(udp_msg[9]) << 8) + parseInt(udp_msg[10]);
+  var value = (parseInt(udp_msg[9]) << 8) + parseInt(udp_msg[10]);
 
   let can_msg = 'can:' + cmd + ':' + hash + ':' + dlc + ':' + data;
 
