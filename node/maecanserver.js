@@ -163,6 +163,12 @@ var mfx_buffer = [];
 //----------------------------------------------------------------------------------//
 // Allgemein:
 
+function sendDatagram(data) {
+  // Datagramm senden
+
+  udpClient.send(new Buffer(data), 0, 13, d_port, ip);
+}
+
 function toUnsignedString(number){ 
   // Lange Hex-Zahl als Unsigned darstellen
 
@@ -234,14 +240,14 @@ function getDeviceInfo(uid, index) {
 
   bussy_fetching = true;
   console.log(`Device info request for UID ${uid}, chanel ${index}`);
-  udpClient.send(new Buffer([0, STATUS_CONFIG, 3, 0, 5, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, index, 0, 0, 0]), d_port, ip)
+  sendDatagram([0, STATUS_CONFIG, 3, 0, 5, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, index, 0, 0, 0]);
 }
 
 function getStatus(uid, chanel){
   // Messwert eines Kanals abrufen
 
   console.log(`Status request for UID ${uid}, chanel ${chanel}`);
-  udpClient.send(new Buffer([0, SYSTEM_CMD, 3, 0, 6, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, SYS_STATUS, chanel, 0, 0]), d_port, ip)
+  sendDatagram([0, SYSTEM_CMD, 3, 0, 6, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, SYS_STATUS, chanel, 0, 0]);
 }
 
 function getDeviceIndexFromUID(uid, devices){ 
@@ -379,7 +385,7 @@ function buildConfigChanelInfo(buffer) {
 function setProtocol(protocol) { 
   // Gleisprotokolle des GFP setzen (3 Bits: 1: MM, 2: MFX, 3: DCC)
 
-  udpClient.send(new Buffer([0, SYSTEM_CMD, 3, 0, 6, (gbox_uid & 0xff000000)>> 24, (gbox_uid & 0x00ff0000)>> 16, (gbox_uid & 0x0000ff00) >> 8, gbox_uid & 0x000000ff, SYS_TRACK_PROTOCOL, protocol, 0, 0]), d_port, ip);
+  sendDatagram([0, SYSTEM_CMD, 3, 0, 6, (gbox_uid & 0xff000000)>> 24, (gbox_uid & 0x00ff0000)>> 16, (gbox_uid & 0x0000ff00) >> 8, gbox_uid & 0x000000ff, SYS_TRACK_PROTOCOL, protocol, 0, 0]);
   let config = require('./config.json');
   let MM = "";
   let DCC = "";
@@ -394,7 +400,7 @@ function setProtocol(protocol) {
 function setNAZ() { 
   // MFX-Neuanmeldezähler setzen
 
-  udpClient.send(new Buffer([0, SYSTEM_CMD,3,0,7,0,0,0,0,SYS_MFX_NRC,0,naz,0]), d_port, ip)
+  sendDatagram([0, SYSTEM_CMD,3,0,7,0,0,0,0,SYS_MFX_NRC,0,naz,0])
 }
 
 
@@ -421,7 +427,7 @@ function sendDataQueryFrames(data_string, rec_hash) {
   let crc = crc16(data_string);
 
   // Paketlänge und CRC sendn
-  udpClient.send(new Buffer([0x00, CONFIG_DATA_STREAM, rec_hash >> 8, rec_hash & 0xff, 0x06, 0x00, 0x00, length >> 8, length & 0xff, crc >> 8, crc & 0xff, 0x00, 0x00]), d_port, ip);
+  sendDatagram([0x00, CONFIG_DATA_STREAM, rec_hash >> 8, rec_hash & 0xff, 0x06, 0x00, 0x00, length >> 8, length & 0xff, crc >> 8, crc & 0xff, 0x00, 0x00]);
 
   // Daten senden
   for (let i = 0; i < packets; i++){
@@ -433,7 +439,7 @@ function sendDataQueryFrames(data_string, rec_hash) {
       }
       
     }
-    udpClient.send(new Buffer([0, CONFIG_DATA_STREAM, rec_hash >> 8, rec_hash & 0xff, 8, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]]), d_port, ip);
+    sendDatagram([0, CONFIG_DATA_STREAM, rec_hash >> 8, rec_hash & 0xff, 8, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]]);
   }
 }
 
@@ -448,7 +454,7 @@ function sendLocoNames(loco_index, loco_count, rec_hash){
   let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
 
   // Antwort auf Anfrage
-  udpClient.send(new Buffer([0x00, DATA_QUERRY + 1, 0x03, 0x00, 0x08, loco_index.toString().charCodeAt(0), 0x20, loco_count.toString().charCodeAt(0), 0, 0, 0, 0x00, 0x00]), d_port, ip);
+  sendDatagram([0x00, DATA_QUERRY + 1, 0x03, 0x00, 0x08, loco_index.toString().charCodeAt(0), 0x20, loco_count.toString().charCodeAt(0), 0, 0, 0, 0x00, 0x00]);
   
   // Sind genug Einträge vorhanden?
   if (loco_count > locolist.length) {
@@ -494,7 +500,7 @@ function sendLocoInfo(loco_name, rec_hash) {
 
   if(found_loco) {
     // Antwort auf Anfrage
-    udpClient.send(new Buffer([0x00, DATA_QUERRY + 1, 0x03, 0x00, 0x08, 0, 0, 0, 0, 0, 0, 0, 0]), d_port, ip);
+    sendDatagram([0x00, DATA_QUERRY + 1, 0x03, 0x00, 0x08, 0, 0, 0, 0, 0, 0, 0, 0]);
 
 
     // String zusammenbauen
@@ -543,7 +549,7 @@ function writeCV(uid, cv_n, value) {
   }
 
   if (valid) {
-    udpClient.send(new Buffer([0, WRITE_CONFIG, 3, 0, 8, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, cv_n >> 8, cv_n & 0xff, value, 0]), d_port, ip)
+    sendDatagram([0, WRITE_CONFIG, 3, 0, 8, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, cv_n >> 8, cv_n & 0xff, value, 0])
   }
 }
 
@@ -571,7 +577,7 @@ function bindMFX(mfxuid, sid) {
   // MFX-Lok anhand der MFX-UID und SID binden.
 
   console.log('Binding MFX-UID ' + toUnsignedString(mfxuid) + ' to SID ' + sid + '.');
-  udpClient.send(new Buffer([0 ,MFX_BIND, 3, 0, 6, (mfxuid & 0xff000000)>> 24, (mfxuid & 0x00ff0000)>> 16, (mfxuid & 0x0000ff00) >> 8, mfxuid & 0x000000ff, (sid & 0xff00) >> 8, sid & 0x00ff,0,0]), d_port, ip);
+  sendDatagram([0 ,MFX_BIND, 3, 0, 6, (mfxuid & 0xff000000)>> 24, (mfxuid & 0x00ff0000)>> 16, (mfxuid & 0x0000ff00) >> 8, mfxuid & 0x000000ff, (sid & 0xff00) >> 8, sid & 0x00ff,0,0]);
 }
 
 function bindMfxSid(mfxuid) { 
@@ -659,7 +665,7 @@ function readMfxConfig(mfxuid, cv_n, cv_i, count) {
   let cv = (cv_i << 10) + cv_n;
   buffer[9] = cv >> 8;
   buffer[10] = (cv & 0xff);
-  udpClient.send(new Buffer(buffer), d_port, ip);
+  sendDatagram(buffer);
   last_mfx_call[0] = cv_n;
   last_mfx_call[1] = count;
   last_mfx_call[2] = mfxuid;
@@ -774,7 +780,7 @@ function mfxDiscovery() {
 
 function mfxDelete(sid) {
   mfxDiscovery();
-  udpClient.send(new Buffer([0, MFX_VRIFY, 3, 0, 6, 0, 0, 0, 0, (sid & 0xFF00) >> 8, (sid & 0x00FF), 0, 0]), d_port, ip);
+  sendDatagram([0, MFX_VRIFY, 3, 0, 6, 0, 0, 0, 0, (sid & 0xFF00) >> 8, (sid & 0x00FF), 0, 0]);
 }
 
 
@@ -784,14 +790,14 @@ function mfxDelete(sid) {
 function stop() { 
   // STOP an den GFP senden.
 
-  udpClient.send(new Buffer([0x00, SYSTEM_CMD, 0x03, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, SYS_STOP, 0x00, 0x00, 0x00]), d_port, ip);
+  sendDatagram([0x00, SYSTEM_CMD, 0x03, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, SYS_STOP, 0x00, 0x00, 0x00]);
   console.log('STOP')
 }
 
 function go() { 
   // Go an den GFP senden.
 
-  udpClient.send(new Buffer([0x00, SYSTEM_CMD, 0x03, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, SYS_GO, 0x00, 0x00, 0x00]), d_port, ip);
+  sendDatagram([0x00, SYSTEM_CMD, 0x03, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, SYS_GO, 0x00, 0x00, 0x00]);
   console.log('GO');
   if (master) {
     bindKnownMfx();
@@ -802,8 +808,8 @@ function go() {
 function ping() { 
   // Ping aussenden.  
 
-  udpClient.send(new Buffer([0, PING,3,0,0,0,0,0,0,0,0,0,0]), d_port, ip);
-  if (master) udpClient.send(new Buffer([0, PING + 1,3,0,8,0,0,0,0,0,0,0xff,0xff]), d_port, ip)
+  sendDatagram([0, PING,3,0,0,0,0,0,0,0,0,0,0]);
+  if (master) sendDatagram([0, PING + 1,3,0,8,0,0,0,0,0,0,0xff,0xff])
   console.log('Ping sent.');
 }
 
@@ -844,7 +850,7 @@ function deleteLoco(index) {
     }
   });
 
-  udpClient.send(new Buffer([0, SYSTEM_CMD, 3, 0, 5, 0, 0, (uid & 0xFF00) >> 8, (uid & 0x00FF), SYS_LOCO_CYCLE_STOP, 0, 0, 0]), d_port, ip)
+  sendDatagram([0, SYSTEM_CMD, 3, 0, 5, 0, 0, (uid & 0xFF00) >> 8, (uid & 0x00FF), SYS_LOCO_CYCLE_STOP, 0, 0, 0])
 
   if (type == "mfx") mfxDelete(uid - 0x4000);
 
@@ -920,26 +926,26 @@ wsServer.on('request', function(request){
       go();
       
 		} else if (cmd == 'setSpeed') {
-      udpClient.send(new Buffer([0, LOCO_SPEED, 3, 0, 6, 0, 0, uid_high, uid_low, value_high, value_low, 0, 0]), d_port, ip);
+      sendDatagram([0, LOCO_SPEED, 3, 0, 6, 0, 0, uid_high, uid_low, value_high, value_low, 0, 0]);
       
 		} else if (cmd == 'getSpeed') {
-			udpClient.send(new Buffer([0, LOCO_SPEED, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
+			sendDatagram([0, LOCO_SPEED, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]);
     
     } else if (cmd == 'lokNothalt') {
-			udpClient.send(new Buffer([0, SYSTEM_CMD, 3, 0, 5, 0, 0, uid_high, uid_low, SYS_LOCO_EMERGENCY_STOP, 0, 0, 0]), d_port, ip);
+			sendDatagram([0, SYSTEM_CMD, 3, 0, 5, 0, 0, uid_high, uid_low, SYS_LOCO_EMERGENCY_STOP, 0, 0, 0]);
     
     } else if (cmd == 'setFn') {
-			udpClient.send(new Buffer([0, LOCO_FN, 3, 0, 6, 0, 0, uid_high, uid_low, value_high, value_low, 0, 0]), d_port, ip);
+			sendDatagram([0, LOCO_FN, 3, 0, 6, 0, 0, uid_high, uid_low, value_high, value_low, 0, 0]);
     
     } else if (cmd == 'getFn') {
-			udpClient.send(new Buffer([0, LOCO_FN, 3, 0, 5, 0, 0, uid_high, uid_low, value, 0, 0, 0]), d_port, ip);
+			sendDatagram([0, LOCO_FN, 3, 0, 5, 0, 0, uid_high, uid_low, value, 0, 0, 0]);
     
     } else if (cmd == 'toggleDir') {
-			udpClient.send(new Buffer([0, LOCO_DIR, 3, 0, 5, 0, 0, uid_high, uid_low, 3, 0, 0, 0]), d_port, ip);
-			udpClient.send(new Buffer([0, LOCO_DIR, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
+			sendDatagram([0, LOCO_DIR, 3, 0, 5, 0, 0, uid_high, uid_low, 3, 0, 0, 0]);
+			sendDatagram([0, LOCO_DIR, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]);
     
     } else if (cmd == 'getDir') {
-			udpClient.send(new Buffer([0, LOCO_DIR, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]), d_port, ip);
+			sendDatagram([0, LOCO_DIR, 3, 0, 4, 0, 0, uid_high, uid_low, 0, 0, 0, 0]);
     
     } else if (cmd == 'getStatus') {
       getStatus(msg[1], msg[2]);
@@ -990,7 +996,7 @@ wsServer.on('request', function(request){
       }
     
     } else if (cmd == 'setConfigValue') {
-      udpClient.send(new Buffer([0x00, SYSTEM_CMD, 0x03, 0x00, 0x08, (msg[1] & 0xff000000)>> 24, (msg[1] & 0x00ff0000)>> 16, (msg[1] & 0x0000ff00) >> 8, msg[1] & 0x000000ff, SYS_STATUS, msg[2], (msg[3] & 0xff00) >> 8, msg[3] & 0x00ff]), d_port, ip);
+      sendDatagram([0x00, SYSTEM_CMD, 0x03, 0x00, 0x08, (msg[1] & 0xff000000)>> 24, (msg[1] & 0x00ff0000)>> 16, (msg[1] & 0x0000ff00) >> 8, msg[1] & 0x000000ff, SYS_STATUS, msg[2], (msg[3] & 0xff00) >> 8, msg[3] & 0x00ff]);
     }
 	});
 });
@@ -1064,8 +1070,8 @@ udpServer.on('message', (udp_msg, rinfo) => {
   
   } else if (cmd == (BOOTL_CAN + 1)) {
     if (master) {
-      udpClient.send(new Buffer([0,0x36,3,0,5,data[0],data[1],data[2],data[3],0x11,0,0,0]), d_port, ip);
-      setTimeout(() => udpClient.send(new Buffer([0,0x30,3,0,0,0,0,0,0,0,0,0,0]), d_port, ip), 20);
+      sendDatagram([0,0x36,3,0,5,data[0],data[1],data[2],data[3],0x11,0,0,0]);
+      setTimeout(() => sendDatagram([0,0x30,3,0,0,0,0,0,0,0,0,0,0]), 20);
       setTimeout(() => {
         setNAZ();
         bindKnownMfx();
@@ -1195,7 +1201,7 @@ setInterval(function(){
     }
   }
   if(!gbox_found) {
-    udpClient.send(new Buffer([0,BOOTL_CAN,3,0,0,0,0,0,0,0,0,0,0]), d_port, ip);
+    sendDatagram([0,BOOTL_CAN,3,0,0,0,0,0,0,0,0,0,0]);
   }
 }, 1000);
 
