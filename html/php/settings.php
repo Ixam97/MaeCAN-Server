@@ -17,7 +17,9 @@
 
 	<!-- CAN-Devices -->
 	<div class="frame_content frame_content_active" id="can_devices">
-		<h1>CAN-Geräte</h1>
+		<div>
+			<h1>CAN-Geräte<div class="button" id="can_devices_help">?</div></h1>
+		</div>
 		<div class="button" id="clear_device_list" style="display: none;">Geräteliste zurücksetzen</div>
 		<div class="button" id="can_dropdown_button">Gerät auswählen</div>
 		<div id="can_dropdown_container" class="dropdown">
@@ -78,7 +80,9 @@
 
 	<!-- Server settings -->
 	<div class="frame_content" id="server_settings">
-		<h1>Server-Einstellungen</h1>
+		<div>
+			<h1>Server-Einstellungen<div class="button" id="server_settings_help">?</div></h1>
+		</div>
 		<div class="button" id="search_updates_button" style="display: none;">Updates suchen ...</div>
 		<div class="button_grid_2">
 			<div class="button power_button" id="restart_button">Server Neustarten</div>
@@ -93,6 +97,8 @@
 			<div class="button protocol_button">DCC</div>
 			<div class="button protocol_button">mfx</div>
 		</div>
+		<h2>MFX/M4:</h2>
+		<div class="button" id="set_naz">Neuanmeldezäler setzen</div>
 
 	</div>
 </div>
@@ -322,6 +328,7 @@
 					option.appendChild(option_name);
 					config_dropdown.appendChild(option);
 				}
+				config_dropdown.value = chanel.def_option;
 				config_dropdown.setAttribute('onchange', `setConfigValue(${device.uid},${chanel.chanel},config_chanel_${chanel.chanel}.value)`);
 				config.appendChild(config_dropdown);
 			} else {
@@ -469,11 +476,15 @@
 		icon_link.value = '';
 	}
 
+	set_naz.onclick = () => {
+		parent.send('mfxDiscovery');
+	}
+
 
 	// --- Server Settings --- //
 
 	function getOnlineVersion(){
-		let version = 0;
+		/*let version = 0;
 		let version_request = new XMLHttpRequest();
 		
 		version_request.open('GET', "https://raw.githubusercontent.com/Ixam97/MaeCAN-Server/master/html/config/version.txt", true);
@@ -496,7 +507,7 @@
 				}
 			}
 		}
-		version_request.send();
+		version_request.send();*/
 
 	}
 
@@ -569,6 +580,10 @@
 	shutdown_button.onclick = function(){
 		parent.showAlertbox(parent.shutdown);
 	};
+
+	can_devices_help.onclick = () =>{
+		parent.showHelp("settings.html#can_devices");
+	}
 
 	for (let i = 0; i < protocol_button.length; i++) {
 		protocol_button[i].onclick = function(){

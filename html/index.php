@@ -33,6 +33,7 @@
 				<div style="display: inline-block;">
 					<div  id="right_arrow" class="arrow" style=" border-left: 7px solid white;"></div>
 				</div>
+				<div id="help_button">?</div>
 				<div id="fsicon"><div></div></div>
 				<p id="time" style="float: right;"></p>
 			</div>
@@ -48,11 +49,13 @@
 
 
 
-		<!-- Alertbox Inhalte -->
+		
 			
 		</div>
 
 		<div id="alertbox" style="display: none;">
+
+				<!-- Alertbox Inhalte -->
 
 				<div class="alertbox" id="connection_lost" style="display: none;">
 					<p style="height: 130px;">Verbindung zum Socket-Server wurde unterbrochen! Verbindung erneut herstellen?</p>
@@ -91,9 +94,19 @@
 					<p id="del_loco_p"></p>
 				<div class="button" id="del_loco_confirm">Löschen</div>
 				<div class="button close_alert">Abbrechen</div>
+				</div>
+		
+				<!-- Dokumentation -->
+
+				<div id="docs_container" style="display: none;">
+					<h1>Hilfe (WIP)</h1>
+					<iframe src="./docs/index.html" id="docs_frame"></iframe>
+					<div class="button" id="close_docs">Schließen</div>
+				</div>
 
 			</div>
 		</div>
+
 
 
 
@@ -155,6 +168,24 @@
 
 			// --- Funktionen --- //
 
+			(function() {
+				function scrollHorizontally(e) {
+					e = window.event || e;
+					var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+					document.getElementById('bookmarks_scroll').scrollLeft -= (delta*40); // Multiplied by 40
+					e.preventDefault();
+				}
+				if (document.getElementById('bookmarks_scroll').addEventListener) {
+					// IE9, Chrome, Safari, Opera
+					document.getElementById('bookmarks_scroll').addEventListener("mousewheel", scrollHorizontally, false);
+					// Firefox
+					document.getElementById('bookmarks_scroll').addEventListener("DOMMouseScroll", scrollHorizontally, false);
+				} else {
+					// IE 6/7/8
+					document.getElementById('bookmarks_scroll').attachEvent("onmousewheel", scrollHorizontally);
+				}
+			})();
+
 
 			function clearAlertBox(){
 				for (let i = 0; i < sub_alertboxes.length; i++) {
@@ -207,6 +238,12 @@
 				showAlertbox(del_loco);
 				loco_to_delete = index;
 				del_loco_p.innerHTML = 'Lok "' + name + '" wirklich löschen?';
+			}
+
+			function showHelp(page){
+				show(alertbox);
+				show(docs_container);
+				docs_frame.setAttribute('src', 'docs/pages/' + page);
 			}
 
 			for (let i = 0; i < bookmark.length; i++) (function(i){
@@ -277,6 +314,16 @@
 			del_loco_confirm.onclick = () => {
 				send(`deleteLoco:${loco_to_delete}`);
 				hideAlertbox();
+			}
+
+			help_button.onclick = () => {
+				show(alertbox);
+				show(docs_container);
+			}
+
+			close_docs.onclick = () => {
+				hide(alertbox);
+				hide(docs_container);
 			}
 
 

@@ -14,7 +14,7 @@
 	margin-left: -152px;
 	height: 200px;
 	width: 300px;
-	border: 2px solid #adadad;
+	border: 2px solid hsl(351, 100%, 50%);
 	background-color: white;
 	border-radius: 15px;
 	position: absolute;
@@ -32,4 +32,8 @@
 
 .sub_alertbox {
 	height: 133px;
+}
+
+.alertbox .button {
+	border: 1px solid hsl(351, 100%, 50%);
 }

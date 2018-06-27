@@ -981,7 +981,14 @@ wsServer.on('request', function(request){
       addLocoFromMsg(dgram.utf8Data);
     
     } else if (cmd == "mfxDiscovery") {
+      let last_power = power;
+      stop();
       mfxDiscovery();
+      if (last_power){
+        setTimeout(function(){
+          go();
+        }, 500)
+      }
     
     } else if (cmd == 'deleteLoco') {
       deleteLoco(msg[1]);
@@ -997,6 +1004,20 @@ wsServer.on('request', function(request){
     
     } else if (cmd == 'setConfigValue') {
       sendDatagram([0x00, SYSTEM_CMD, 0x03, 0x00, 0x08, (msg[1] & 0xff000000)>> 24, (msg[1] & 0x00ff0000)>> 16, (msg[1] & 0x0000ff00) >> 8, msg[1] & 0x000000ff, SYS_STATUS, msg[2], (msg[3] & 0xff00) >> 8, msg[3] & 0x00ff]);
+      let devices = JSON.parse(fs.readFileSync('../html/config/devices.json'));
+
+      for (let i = 0; i < devices.length; i++) {
+        if (msg[1] == devices[i].uid) {
+          if (devices[i].config_chanels_info[msg[2]-1].type == 1) {
+            devices[i].config_chanels_info[msg[2]-1].def_option = msg[3];
+          } else {
+            devices[i].config_chanels_info[msg[2]-1].def_value = msg[3];
+          }
+          break;
+        }
+      }
+
+      fs.writeFile('../html/config/devices.json', JSON.stringify(devices, null, 2), console.log("updating devices entry."))
     }
 	});
 });
