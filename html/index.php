@@ -2,9 +2,9 @@
 <html style="font-size: 10px; margin: 0;" id='html'>
 	<head>
 		<title>MäCAN-Webserver</title>
-		<link rel="manifest" href="/manifest.json?2">
-		<link rel="shortcut icon" type="image/x-icon" href="/favicon.png">
-		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+		<link rel="manifest" href="manifest.json?2">
+		<link rel="shortcut icon" type="image/x-icon" href="favicon.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 		<link rel="stylesheet" type="text/css" href="styles/main.css?<?php echo time()?>">
 		<link rel="stylesheet" type="text/css" href="styles/alertbox.css?<?php echo time()?>">
 		<meta charset="utf-8">
@@ -243,7 +243,7 @@
 			function showHelp(page){
 				show(alertbox);
 				show(docs_container);
-				docs_frame.setAttribute('src', 'docs/pages/' + page);
+				docs_frame.src = ('docs/pages/' + page);
 			}
 
 			for (let i = 0; i < bookmark.length; i++) (function(i){
@@ -324,6 +324,7 @@
 			close_docs.onclick = () => {
 				hide(alertbox);
 				hide(docs_container);
+				docs_frame.src = ('docs/index.html');
 			}
 
 

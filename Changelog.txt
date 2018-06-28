@@ -3,6 +3,11 @@
 MäCAN-Sever by Maximilian Goldschmidt
 
 
+## [2018-06-28.2]
+### Added
+- Die Lokliste wird nun zusätzlich als "lokomotive.cs2" gespeichert, um sie Anwendungen, die diese benötigen, zur verfügung zu stellen
+- Einträge in der Hilfe
+
 ## [2018-06-28.1]
 ### Added
 - Grunlagen für eine integrierte Hilfe

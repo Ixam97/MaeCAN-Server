@@ -296,6 +296,8 @@
 		current_loco.adress = adress.value;
 		if (current_loco.typ == "dcc") {
 			current_loco.uid = parseInt(current_loco.adress) + 0xc000;
+		} else if (current_loco.typ == "mfx"){
+			current_loco.uid = parseInt(current_loco.adress) + 0x4000;
 		} else {
 			current_loco.uid = current_loco.adress;
 		}

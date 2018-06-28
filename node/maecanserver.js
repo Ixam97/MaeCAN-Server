@@ -195,6 +195,11 @@ function configUpdate(config) {
   fs.writeFile('./config.json', JSON.stringify(config, null, 2), console.log('Updated config.'));
 }
 
+function locolistUpdate(locolist){
+  exportCS2Locolist(locolist);
+  fs.writeFile('../html/config/locolist.json', JSON.stringify(locolist, null, 2), console.log('Updated locolist.'));
+}
+
 function crc16(s) {
   // Mithilfe des Lookup-Tables die Prüfsumme generieren
 
@@ -473,6 +478,48 @@ function sendLocoNames(loco_index, loco_count, rec_hash){
   sendDataQueryFrames(loco_string, rec_hash);
 }
 
+function buildLocoStringForCS2(loco, is_cs2_locolist){
+  // Einen von einer CS2 o.Ä. lesbaren String erzeugen
+
+  let loco_string = "lokomotive\x0a .uid=0x" + loco.uid.toString(16) + "\x0a .name=" + loco.name + "\x0a .adresse=0x" + loco.adress.toString(16) + "\x0a .typ=" + loco.typ;
+    if (loco.typ == "mfx") {
+      loco_string += ("\x0a .mfxuid=" + loco.mfxuid.toString(16));
+    } else {
+      loco_string += "\x0a .mfxuid=0xffffffff";
+    }
+    loco_string += ("\x0a .av=" + loco.av + "\x0a .bv=" + loco.bv + "\x0a .volume=" + loco.volume + "\x0a .vmax=" + loco.vmax + "\x0a .vmin=" + loco.vmin);
+
+    if (loco.functions && !is_cs2_locolist) {
+      for (let i = 0; i < loco.functions.length; i++) {
+        loco_string += "\x0a .fkt\x0a ..nr=" + i + "\x0a ..typ=" + loco.functions[i].toString();
+      }
+    } else if(loco.functions && is_cs2_locolist) {
+      for (let i = 0; i < loco.functions.length; i++) {
+        loco_string += "\x0a .funktionen\x0a ..nr=" + i + "\x0a ..typ=" + loco.functions[i].toString();
+      }
+    }
+
+    loco_string += "\x0a";
+
+  return loco_string;
+}
+
+function exportCS2Locolist(locolist){
+  // Lokliste für CS2-Anwendungen generieren
+
+  //let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
+  let config = JSON.parse(fs.readFileSync("./config.json"));
+
+  let locolist_string = "[lokomotive]\x0aversion\x0a .minor=1\x0asession\x0a .id=" + config.new_registration_counter + "\x0a";
+  for (let i = 0; i < locolist.length; i++) {
+    locolist_string += buildLocoStringForCS2(locolist[i], true);
+  }
+  
+  fs.writeFile('../html/config/lokomotive.cs2', locolist_string, () => {
+    console.log('Exported Lokomotive.cs2');
+  });
+}
+
 function sendLocoInfo(loco_name, rec_hash) { 
   // Lokinformationen an Client senden
 
@@ -504,19 +551,7 @@ function sendLocoInfo(loco_name, rec_hash) {
 
 
     // String zusammenbauen
-    let data_string = "[lokomotive]\x0alok\x0a .uid=0x" + loco.uid.toString(16) + "\x0a .name=" + loco.name + "\x0a .adresse=0x" + loco.adress.toString(16) + "\x0a .typ=" + loco.typ;
-    if (loco.typ == "mfx") {
-      data_string += ("\x0a .mfxuid=" + loco.mfxuid.toString(16));
-    } else {
-      data_string += "\x0a .mfxuid=0xffffffff";
-    }
-    data_string += ("\x0a .av=" + loco.av + "\x0a .bv=" + loco.bv + "\x0a .volume=" + loco.volume + "\x0a .vmax=" + loco.vmax + "\x0a .vmin=" + loco.vmin);
-
-    for (let i = 0; i < loco.functions.length; i++) {
-      data_string += "\x0a .fkt\x0a ..nr=" + i + "\x0a ..typ=" + loco.functions[i].toString();
-    }
-
-    data_string += "\x0a";
+    let data_string = "[lokomotive]\x0a" + buildLocoStringForCS2(loco, false);
 
     sendDataQueryFrames(data_string, rec_hash);
   } else {
@@ -632,6 +667,7 @@ function addMfxLocoToList(mfxuid) {
     
     fs.writeFile('../html/config/locolist.json', JSON.stringify(locolist, null, 2), function(){
       console.log("Adding MFX loco to locolist (UID: " + toUnsignedString(mfxuid) + ").");
+      exportCS2Locolist(locolist);
       for (var i in clients){
         clients[i].sendUTF("updateLocolist");
       }
@@ -751,6 +787,7 @@ function processMfxBuffer() {
           }
         }
       }
+      exportCS2Locolist(locolist);
     }
   }
     
@@ -830,6 +867,7 @@ function addLocoFromMsg(msg_string) {
 
   fs.writeFile("../html/config/locolist.json", JSON.stringify(locolist, null, 2), () => {
     console.log("updated loco: " + new_loco.name);
+    exportCS2Locolist(locolist);
     for (var i in clients){
         clients[i].sendUTF("updateLocolist");
       }
@@ -845,6 +883,7 @@ function deleteLoco(index) {
   locolist.splice(index, 1);
   fs.writeFile("../html/config/locolist.json", JSON.stringify(locolist, null, 2), () => {
     console.log("Deleted " + name);
+    exportCS2Locolist(locolist);
     for (var i in clients){
         clients[i].sendUTF("updateLocolist");
     }

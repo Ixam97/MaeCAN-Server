@@ -53,7 +53,9 @@
 
 	<!-- Loco icons -->
 	<div class="frame_content">
-		<h1>Lokbilder</h1>
+		<div>
+			<h1>Lokbilder<div class="button" id="loco_icons_help">?</div></h1>
+		</div>
 		<h2>Lokbilder Hochladen:</h2>
 		<p>Lokbilder zum Server Hochladen. Es können mehrere Bilder gleichzeitig hochgeladen werden.</p>
 		<form action="./php/upload.php" method="post", enctype="multipart/form-data" target="php_dummy">
@@ -583,6 +585,14 @@
 
 	can_devices_help.onclick = () =>{
 		parent.showHelp("settings.html#can_devices");
+	}
+
+	loco_icons_help.onclick = () => {
+		parent.showHelp('settings.html#loco_icons');
+	}
+
+	server_settings_help.onclick = () => {
+		parent.showHelp('settings.html#server_settings');
 	}
 
 	for (let i = 0; i < protocol_button.length; i++) {
