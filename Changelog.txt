@@ -2,6 +2,13 @@
 
 MäCAN-Sever by Maximilian Goldschmidt
 
+## [2018-06-30.1]
+### Fixed
+- mfx/M4-Anmeldung erneut überarbeitet.
+- Rechtschreibfehler behoben / Texte angepasst
+
+### Changed
+- lokomotive.cs2 wird nun in /www/config/ gespeichert
 
 ## [2018-06-28.3]
 ### Fixed
