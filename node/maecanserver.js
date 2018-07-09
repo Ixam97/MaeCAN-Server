@@ -170,6 +170,10 @@ function sendDatagram(data) {
   udpClient.send(new Buffer(data), 0, 13, d_port, ip);
 }
 
+function sendCanFrame(cmd, response, dlc, data) {
+  // CAN-Nachricht senden
+}
+
 function toUnsignedString(number){ 
   // Lange Hex-Zahl als Unsigned darstellen
 
@@ -194,11 +198,6 @@ function configUpdate(config) {
   // Config-Datei aktualisieren
 
   fs.writeFile('./config.json', JSON.stringify(config, null, 2), console.log('Updated config.'));
-}
-
-function locolistUpdate(locolist){
-  exportCS2Locolist(locolist);
-  fs.writeFile('../html/config/locolist.json', JSON.stringify(locolist, null, 2), console.log('Updated locolist.'));
 }
 
 function crc16(s) {
@@ -415,7 +414,6 @@ function setNAZ() {
 
 function sendDataQueryFrames(data_string, rec_hash) { 
   // Datenpakete versenden (z.B. Lokliste etc.)
-  // Padding durch 0x00
 
   console.log(data_string);
   let length = data_string.length;
@@ -512,7 +510,6 @@ function buildLocoStringForCS2(loco, is_cs2_locolist){
 function exportCS2Locolist(locolist){
   // Lokliste für CS2-Anwendungen generieren
 
-  //let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
   let config = JSON.parse(fs.readFileSync("./config.json"));
 
   let locolist_string = "[lokomotive]\x0aversion\x0a .minor=1\x0asession\x0a .id=" + config.new_registration_counter + "\x0a";
@@ -564,9 +561,10 @@ function sendLocoInfo(loco_name, rec_hash) {
   }
 }
 
-function writeCV(uid, cv_n, value) {
+function writeCV(uid, cv_n, cv_i, value) {
   // CV-Werte schreiben
 
+  let cv = (cv_i << 10) + cv_n;
   let valid = false;
   if (uid <= 0x03ff) {
     // Motorola
@@ -584,12 +582,15 @@ function writeCV(uid, cv_n, value) {
     } else {
       console.log('Exceeding DCC CV space.')
     }
+  } else if (uid >= 0x4000) {
+    //mfx
+    valid = true;
   } else {
     console.log('Unknown Protokoll, not writing CV.')
   }
 
   if (valid) {
-    sendDatagram([0, WRITE_CONFIG, 3, 0, 8, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, cv_n >> 8, cv_n & 0xff, value, 0])
+    sendDatagram([0, WRITE_CONFIG, 3, 0, 8, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, (cv_i << 2) + (cv_n >> 8), cv_n & 0xff, value, 0])
   }
 }
 
@@ -715,6 +716,8 @@ function readMfxConfig(mfxuid, cv_n, cv_i, count) {
 }
 
 function fillMfxBuffer(data) {
+  // Empfangene Daten zwischenspeichern
+
   let cv = (data[4] << 8) + data[5];
   let cv_i = cv >> 10;
   let cv_n = cv & 0x3ff;
@@ -727,16 +730,9 @@ function fillMfxBuffer(data) {
 }
 
 function processMfxBuffer() {
-  let cv_n = mfx_buffer[0];
+  // Den Puffer eines mfx-Config-Reads auswerten
 
-  //let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
-  /*let index;
-  for (let i = 0; i < locolist.length; i++ ){
-    if (last_mfx_call[2] == locolist[i].uid) {
-      index = i;
-      break;
-    }
-  }*/
+  let cv_n = mfx_buffer[0];
   
   if (cv_n == 3) {
     // Lokname
@@ -760,24 +756,24 @@ function processMfxBuffer() {
     temp_mfx_loco.mfxadr.volume = (mfx_buffer[7] * 4) + 1;
     temp_mfx_loco.mfxadr.func = (mfx_buffer[3] * 4) + 1;
 
-    readMfxConfig(last_mfx_call[2], temp_mfx_loco.mfxadr.xcel, 1, 2);
+    readMfxConfig(last_mfx_call[2], temp_mfx_loco.mfxadr.xcel, 1, 2); //Av Bv
 
   } else {
     if (cv_n == temp_mfx_loco.mfxadr.xcel) {
       temp_mfx_loco.av = mfx_buffer[1];
       temp_mfx_loco.bv = mfx_buffer[2];
 
-      readMfxConfig(last_mfx_call[2], temp_mfx_loco.mfxadr.speedtable, 1, 2);
+      readMfxConfig(last_mfx_call[2], temp_mfx_loco.mfxadr.speedtable, 1, 2); // Vmin Vamx
     } else if (cv_n == temp_mfx_loco.mfxadr.speedtable) {
       temp_mfx_loco.vmin = mfx_buffer[1];
       temp_mfx_loco.vmax = mfx_buffer[2];
 
-      readMfxConfig(last_mfx_call[2], temp_mfx_loco.mfxadr.volume, 1, 1);
+      readMfxConfig(last_mfx_call[2], temp_mfx_loco.mfxadr.volume, 1, 1); // Lautstärke
     } else if (cv_n == temp_mfx_loco.mfxadr.volume) {
       temp_mfx_loco.volume = mfx_buffer[1];
       temp_mfx_loco.functions = [];
 
-      readMfxConfig(last_mfx_call[2], temp_mfx_loco.mfxadr.func, 1, 2)
+      readMfxConfig(last_mfx_call[2], temp_mfx_loco.mfxadr.func, 1, 2) // Lokfunktionen
     } else {
       for (let i = 0; i < 16; i++) {
         if (cv_n == temp_mfx_loco.mfxadr.func + (i * 3)) {
@@ -800,12 +796,13 @@ function processMfxBuffer() {
             
             fs.writeFile('../html/config/locolist.json', JSON.stringify(locolist, null, 2), function(){
               console.log('Updating loco ' + temp_mfx_loco.name);
+              let _name = temp_mfx_loco.name;
 
               setTimeout(()=> {
                 exportCS2Locolist(locolist);
                 for (var i in clients){
                   clients[i].sendUTF("updateLocolist");
-                  clients[i].sendUTF(`foundMfx:${temp_mfx_loco.name}`);
+                  clients[i].sendUTF(`foundMfx:${_name}`);
                 }
               }, 500)
                 
@@ -823,6 +820,8 @@ function processMfxBuffer() {
 } 
 
 function mfxDiscovery() {
+  // mfx-Neuanmeldezähler erhöhen
+
   if (naz < 0xff) {
     naz++
   } else {
@@ -837,6 +836,8 @@ function mfxDiscovery() {
 }
 
 function mfxDelete(sid) {
+  // Beim löschen einer mfx-Lok den NAZ erhöhen
+
   mfxDiscovery();
   sendDatagram([0, MFX_VRIFY, 3, 0, 6, 0, 0, 0, 0, (sid & 0xFF00) >> 8, (sid & 0x00FF), 0, 0]);
 }
@@ -876,6 +877,8 @@ function ping() {
 // Websocket-Pakete:
 
 function addLocoFromMsg(msg_string) {
+  // Manuell erstellte Lok der Liste hinzufügen
+
   let cmd = msg_string.split(":")[0]
   let new_loco = JSON.parse(msg_string.substring(msg_string.indexOf("$")+1, msg_string.indexOf("§")));
   let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
@@ -896,6 +899,8 @@ function addLocoFromMsg(msg_string) {
 }
 
 function deleteLoco(index) {
+  // Eine Lok aus der Liste löschen
+
   let locolist = JSON.parse(fs.readFileSync("../html/config/locolist.json"));
   let uid = parseInt(locolist[index].uid);
   let name = locolist[index].name;
@@ -904,10 +909,12 @@ function deleteLoco(index) {
   locolist.splice(index, 1);
   fs.writeFile("../html/config/locolist.json", JSON.stringify(locolist, null, 2), () => {
     console.log("Deleted " + name);
-    exportCS2Locolist(locolist);
-    for (var i in clients){
+    setTimeout(() => {
+      exportCS2Locolist(locolist);
+      for (var i in clients){
         clients[i].sendUTF("updateLocolist");
-    }
+      }
+    }, 500);
   });
 
   sendDatagram([0, SYSTEM_CMD, 3, 0, 5, 0, 0, (uid & 0xFF00) >> 8, (uid & 0x00FF), SYS_LOCO_CYCLE_STOP, 0, 0, 0])
@@ -917,6 +924,8 @@ function deleteLoco(index) {
 }
 
 function clearDeviceList() {
+  // CAN-Geräteliste vollständig leeren
+
   fs.writeFile('../html/config/devices.json', JSON.stringify([], null, 2), function(){
     console.log("clearing devices");
   });
@@ -926,7 +935,7 @@ function clearDeviceList() {
 //----------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------//
 
-clearDeviceList();
+//clearDeviceList();
 
 
 udpServer.on('listening', () => {
@@ -1078,6 +1087,12 @@ wsServer.on('request', function(request){
       }
 
       fs.writeFile('../html/config/devices.json', JSON.stringify(devices, null, 2), console.log("updating devices entry."))
+    
+    } else if (cmd == 'progCV') {
+      writeCV(uid, msg[2], msg[3], msg[4]);
+
+    } else if (cmd  == 'delIcon') {
+      exec('rm ../html/loco_icons/' + msg[1]);
     }
 	});
 });
@@ -1273,7 +1288,6 @@ udpServer.on('message', (udp_msg, rinfo) => {
   }
 });
 
-
 //----------------------------------------------------------------------------------//
 // Periodischer Code:
 
@@ -1300,7 +1314,6 @@ var data_fetcher = setInterval(function(){
   // Configdaten aus CAN-Geräten auslesen
 
   var devices = require('../html/config/devices.json');
-  //var devices = JSON.parse(fs.readFileSync('../html/config/devices.json'));
   for (var i = 0; i < devices.length; i++) {
     if (!bussy_fetching) {
       if (!devices[i].name){
