@@ -168,6 +168,8 @@
 	let local_version;
 	let online_version;
 
+	var upload_icons;
+
 	//--- Allgemein ---//
 
 	function resizeSettings(){
@@ -455,6 +457,7 @@
 	function fileSelection(evt) {
 		icon_list_upload.innerHTML = "";
 		let files = evt.target.files;
+		upload_icons = files;
 		for (let i = 0, f; f = files[i]; i++) {
 			if (!f.type.match('image.*')) {
 				continue;
@@ -537,14 +540,24 @@
 
 	upload_icon.onclick = function() {
 		icon_list_upload.innerHTML = "";
+		setTimeout(() => {
+			for (let i = 0; i < upload_icons.length; i++) {
+				addIconToLists(upload_icons[i].name);
+			}
+		}, 500*upload_icons.length);
 	}
 
 	download_icon.onclick = function() {
 		parent.ws.send('downloadIcon:' + icon_link.value);
 		icon_list_download.innerHTML = "";
-		icon_name = icon_link.value.split('/')[icon_link.value.split('/').length - 1]
+		let icons = icon_link.value.split(' ');
 		icon_link.value = '';
-		setTimeout(() => addIconToLists(icon_name), 500);
+		setTimeout(() => {
+			for (let i = 0; i < icons.length; i++) {
+				let icon_name = icons[i].split('/')[icons[i].split('/').length-1];
+				addIconToLists(icon_name);
+			}
+		}, 500*icons.length);
 	}
 
 	set_naz.onclick = () => {

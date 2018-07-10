@@ -2,6 +2,13 @@
 
 MäCAN-Sever by Maximilian Goldschmidt
 
+
+## [2018-07-10.1]
+### Fixed
+- Werden mehrere Bilder gleichzeitig herunter geladen werden auch alle korrekt angezeigt.
+- Auch beim Hochladen werden die Lokbilder nun ohne Neuladen angezeigt.
+
+
 ## [2018-07-09.1]
 ### Added
 - Loks können nun Lokbilder zugewiesen werden.
