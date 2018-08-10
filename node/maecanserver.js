@@ -35,7 +35,7 @@ const SYSTEM_CMD = 0x00
   const SYS_RESET = 0x80
 const LOCO_DISCOVERY = 0x02
 const MFX_BIND = 0x04
-const MFX_VRIFY = 0x06
+const MFX_VERIFY = 0x06
 const LOCO_SPEED = 0x08
 const LOCO_DIR = 0x0a
 const LOCO_FN = 0x0c
@@ -300,7 +300,7 @@ function buildStatusChanelInfo(buffer) {
 
   status_chanel.chanel = buffer[1][0];
   if (buffer[1][1] > 127) {
-    status_chanel.power = buffer[1][1] - 0xff;
+    status_chanel.power = buffer[1][1] - 0x100;
   } else { status_chanel.power = buffer[1][1];
   }
   status_chanel.color_1 = statusChanelColor(buffer[1][2]);
@@ -839,7 +839,7 @@ function mfxDelete(sid) {
   // Beim löschen einer mfx-Lok den NAZ erhöhen
 
   mfxDiscovery();
-  sendDatagram([0, MFX_VRIFY, 3, 0, 6, 0, 0, 0, 0, (sid & 0xFF00) >> 8, (sid & 0x00FF), 0, 0]);
+  sendDatagram([0, MFX_VERIFY, 3, 0, 6, 0, 0, 0, 0, (sid & 0xFF00) >> 8, (sid & 0x00FF), 0, 0]);
 }
 
 
@@ -1278,6 +1278,15 @@ udpServer.on('message', (udp_msg, rinfo) => {
       lokinfo_loconame += data_string;
       sendLocoInfo(lokinfo_loconame, hash);
     }
+
+  } else if (cmd == S88_EVENT) {
+    let device_ken = (data[0] << 8) + data[1];
+    let contact_ken = (data[2] << 8) + data[3];
+    let state_old = data[4];
+    let state_new = data[5];
+
+    console.log('Contact no. ' + contact_ken + ' changed state from ' + state_old + ' to ' + state_new);
+    ws_msg = `s88Event:${contact_ken}:${state_old}:${state_new}`;
 
   }
 

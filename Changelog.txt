@@ -2,6 +2,13 @@
 
 MäCAN-Sever by Maximilian Goldschmidt
 
+## [2018-08-10.1]
+### Fixed
+- Ein Fehler bei der Darstellung von Messwerten wurde behoben
+
+### Added
+- Platzhalter für das Keyboard (noch funktionslos)
+
 
 ## [2018-07-10.1]
 ### Fixed

@@ -523,3 +523,91 @@ h1 .button {
 	background-color: #ffcd10;
 	border: 1px solid orange;
 }
+
+/* KEYBOARD */
+
+.keyboard_grid {
+	display: grid;
+	grid-gap: 10px;
+	margin: 10px;
+}
+
+@media screen and (min-width: 950px){
+	.keyboard_grid {
+		grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+	}
+}
+
+@media screen and (min-width: 856px) and (max-width: 949px){
+	.keyboard_grid {
+		grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+	}
+}
+
+@media screen and (min-width: 762px) and (max-width: 855px){
+	.keyboard_grid {
+		grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+	}
+}
+
+@media screen and (min-width: 668px) and (max-width: 761px){
+	.keyboard_grid {
+		grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+	}
+}
+
+@media screen and (min-width: 574px) and (max-width: 667px){
+	.keyboard_grid {
+		grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+	}
+}
+
+@media screen and (min-width: 480px) and (max-width: 573px){
+	.keyboard_grid {
+		grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+	}
+}
+
+@media screen and (max-width: 479px){
+	.keyboard_grid {
+		grid-template-columns: 1fr 1fr 1fr 1fr;
+	}
+}
+
+.acc {
+	background-color: #dadada;
+	border-radius: 5px;
+	text-align: center;
+	margin: 0;
+}
+
+.acc_indicator {
+	margin: auto;
+	margin-top: 10px;
+}
+
+.acc_indicator > div:first-child {
+	height: 20px;
+    width: 50px;
+    background-color: #ff0025;
+    margin: auto;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.acc_indicator > div:nth-child(2) {
+	height: 20px;
+    width: 20px;
+    border-radius: 10px;
+    background-color: #ff0025;
+    margin: auto;
+}
+
+.acc_indicator > div:nth-child(3) {
+	height: 20px;
+    width: 50px;
+    background-color: #2fa938;
+    margin: auto;
+    margin-top: 10px;
+    border-radius: 5px;
+}

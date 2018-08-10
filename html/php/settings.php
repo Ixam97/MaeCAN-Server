@@ -388,7 +388,8 @@
 					let end = parseFloat(chanels.end);
 					let origin = chanels.origin;
 					let max = chanels.range_4;
-					let clear_value = ((((end - start) / (max - origin))*value)+start).toFixed(2);
+					let divider = (end - start) / (max - origin);
+					let clear_value = (start - (origin * divider) + (value * divider)).toFixed(3);
 					value = (100 / chanels.range_4) * value;
 					document.getElementById('bar_filler_' + index).style.width = (100 - value) + "%";
 					document.getElementById('reading_name_' + index).innerHTML = getReadingName(chanels.name) + ": " + clear_value + " " + chanels.unit;
