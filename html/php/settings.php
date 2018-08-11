@@ -24,7 +24,9 @@
 		<div class="button" id="can_dropdown_button">Gerät auswählen</div>
 		<div id="can_dropdown_container" class="dropdown">
 		</div>
+		<p id="disconnect_warning" style="color: red; display: none">Gerät nicht verbunden!</p>
 		<div id="device_info" style="display: none;">
+		<div id="delete_device" class="button power_button">Aus Geräteliste löschen</div>
 			<h2>Informationen:</h2>
 			<p class="ml30"></p>
 			<p class="ml30"></p>
@@ -222,6 +224,7 @@
 	//--- CAN-Devices ---//
 
 	function showDeviceInfo(device){
+		
 		show(device_info);
 		can_dropdown_button.innerHTML = device.name + ' #' + device.serial_number;
 		device_info.children[1].innerHTML = "Name: " + device.name;
@@ -422,6 +425,7 @@
 							can_dropdown_container.setAttribute('class', 'dropdown');
 							can_dropdown_button.setAttribute('class', 'button');
 							showDeviceInfo(devices[i]);
+							parent.ws.send('ping');
 							visible_device = devices[i];
 						}
 					};
@@ -647,6 +651,17 @@
 		document.getElementById('can_monitor').lastChild.scrollIntoView();
 	}
 
+	function deviceConnectionStatus(uid, status) {
+		if (visible_device.uid == uid) {
+			console.log("Status of " + uid + ": " + status);
+			if (status == 'false') {
+				show(disconnect_warning);
+			} else {
+				hide(disconnect_warning);
+			}
+		}
+	}
+
 	clear_device_list.onclick = () => {
 		parent.ws.send('clearDeviceList');
 		can_dropdown_button.innerHTML = "Gerät auswählen";
@@ -668,6 +683,13 @@
 
 	can_devices_help.onclick = () =>{
 		parent.showHelp("settings.html#can_devices");
+	}
+
+	delete_device.onclick = () => {
+		parent.send(`delDevice:${visible_device.uid}`);
+		can_dropdown_button.innerHTML = 'Gerät auswählen';
+		hide(device_info);
+		hide(disconnect_warning);
 	}
 
 	loco_icons_help.onclick = () => {

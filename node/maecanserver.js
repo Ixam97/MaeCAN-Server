@@ -109,13 +109,16 @@ const function_table = [0 ,0 ,50 ,1 ,2 , 3, 14, 5, 5, 5, 8, 102];
 // Laden der Konfiguration
 
 var local_config = require('./config.json');
+var local_version = require('./version.json');
+
+var devices = require('../html/config/devices.json');
 
 var naz = local_config.new_registration_counter;
 var master = local_config.master;
 var ip = local_config.ip;
 var d_port = local_config.d_port;
 var l_port = local_config.l_port;
-var version = local_config.version;
+var version = local_version.version;
 
 var power = false;
 
@@ -137,6 +140,7 @@ var lokinfo_request = 0;
 var lokinfo_loconame = "";
 
 var bussy_fetching = false;
+var bussy_fetching_timeout;
 
 
 //----------------------------------------------------------------------------------//
@@ -244,6 +248,7 @@ function getDeviceInfo(uid, index) {
   // Grundlegende CAN-Geräteinformationen abrufen
 
   bussy_fetching = true;
+  
   console.log(`Device info request for UID ${uid}, chanel ${index}`);
   sendDatagram([0, STATUS_CONFIG, 3, 0, 5, (uid & 0xff000000)>> 24, (uid & 0x00ff0000)>> 16, (uid & 0x0000ff00) >> 8, uid & 0x000000ff, index, 0, 0, 0]);
 }
@@ -926,7 +931,9 @@ function deleteLoco(index) {
 function clearDeviceList() {
   // CAN-Geräteliste vollständig leeren
 
-  fs.writeFile('../html/config/devices.json', JSON.stringify([], null, 2), function(){
+  devices = [];
+
+  fs.writeFile('../html/config/devices.json', JSON.stringify(devices, null, 2), function(){
     console.log("clearing devices");
   });
 }
@@ -1073,8 +1080,7 @@ wsServer.on('request', function(request){
     
     } else if (cmd == 'setConfigValue') {
       sendDatagram([0x00, SYSTEM_CMD, 0x03, 0x00, 0x08, (msg[1] & 0xff000000)>> 24, (msg[1] & 0x00ff0000)>> 16, (msg[1] & 0x0000ff00) >> 8, msg[1] & 0x000000ff, SYS_STATUS, msg[2], (msg[3] & 0xff00) >> 8, msg[3] & 0x00ff]);
-      let devices = JSON.parse(fs.readFileSync('../html/config/devices.json'));
-
+      
       for (let i = 0; i < devices.length; i++) {
         if (msg[1] == devices[i].uid) {
           if (devices[i].config_chanels_info[msg[2]-1].type == 1) {
@@ -1085,14 +1091,30 @@ wsServer.on('request', function(request){
           break;
         }
       }
-
-      fs.writeFile('../html/config/devices.json', JSON.stringify(devices, null, 2), console.log("updating devices entry."))
+  
+      fs.writeFile('../html/config/devices.json', JSON.stringify(devices, null, 2), console.log("updating devices entry."));
+      
     
     } else if (cmd == 'progCV') {
       writeCV(uid, msg[2], msg[3], msg[4]);
 
     } else if (cmd  == 'delIcon') {
       exec('rm ../html/loco_icons/' + msg[1]);
+
+    } else if (cmd == 'delDevice') {
+      for (let i = 0; i < devices.length; i++) {
+        if (devices[i].uid == msg[1]) {
+          devices.splice(i, 1);
+          break;
+        }
+      }
+      
+      fs.writeFile('../html/config/devices.json', JSON.stringify(devices, null, 2), console.log("Deleting device " + msg[1]));
+
+      ping();
+    
+    } else if (cmd == 'ping') {
+      ping();
     }
 	});
 });
@@ -1106,16 +1128,6 @@ udpServer.on('error', (err) => {
 
 // Befehle vom CAN verarbeiten:
 udpServer.on('message', (udp_msg, rinfo) => {
-
-  /*let buffer_forward = "Frame:";
-
-  for(let i = 0; i < udp_msg.length; i++) {
-    buffer_forward += (parseInt(udp_msg[i]).toString(16) + ' ');
-  }
-
-  for (var i in clients){
-    clients[i].sendUTF(buffer_forward);
-  }*/
 
   var ws_msg = '';
   var cmd = parseInt(udp_msg[1]);
@@ -1196,7 +1208,6 @@ udpServer.on('message', (udp_msg, rinfo) => {
     }
 
     if (dlc == 6 || dlc == 5) {
-      let devices = require('../html/config/devices.json');
       let device = devices[getDeviceIndexFromUID(uid, devices)];
       config_buffer[0] = data;
       let chanel = config_buffer[0][4];
@@ -1230,29 +1241,38 @@ udpServer.on('message', (udp_msg, rinfo) => {
   		gbox_uid = uid;
     }
     
-    var devices = require('../html/config/devices.json');
     var device_exists = false;
     let existing_index = 0;
-
+  
     for (i = 0; i < devices.length; i++) {
       if (devices[i].uid == uid || uid == 0) {
         device_exists = true;
+        devices[i].pingResponse = true;
         existing_index = i;
         break;
       }
     }
-
+  
     if (!device_exists) {
       var index = devices.length;
       devices[index] = {};
       devices[index].uid = uid;
       devices[index].version = str_ver;
       devices[index].type = str_typ;
+      devices[index].pingResponse = true;
 
       fs.writeFile('../html/config/devices.json', JSON.stringify(devices, null, 2), function(){
         console.log("writing new devices entry.");
       });
     }
+
+    for (let i = 0; i < devices.length; i++) {
+      for (var j in clients){
+        clients[j].sendUTF(`deviceConnected:${devices[i].uid}:${devices[i].pingResponse}`);
+      }
+    }
+    
+    
 
   } else if (cmd == DATA_QUERRY){
     let data_string = "";
@@ -1300,13 +1320,15 @@ udpServer.on('message', (udp_msg, rinfo) => {
 //----------------------------------------------------------------------------------//
 // Periodischer Code:
 
-setInterval(() => ping(), 10000);
+setInterval(() => {
+  for (let i = 0; i < devices.length; i++) {
+    devices[i].pingResponse = false;
+  }
+  ping();
+}, 10000);
   // Alle 10 Sekunden einen Ping senden
 
 setInterval(function(){
-  // Gleisbox aufwecken, wenn keine MS2 vorhanden ist.
-  
-  let devices = require('../html/config/devices.json');
   let gbox_found = false;
   for (let i = 0; i < devices.length; i++) {
     if (devices[i].type == 10) {
@@ -1322,7 +1344,6 @@ setInterval(function(){
 var data_fetcher = setInterval(function(){
   // Configdaten aus CAN-Geräten auslesen
 
-  var devices = require('../html/config/devices.json');
   for (var i = 0; i < devices.length; i++) {
     if (!bussy_fetching) {
       if (!devices[i].name){
@@ -1343,7 +1364,6 @@ var data_fetcher = setInterval(function(){
         getDeviceInfo(devices[i].uid, devices[i].status_chanels + (devices[i].config_chanels_info.length + 1));
         break;
       }
-
       if (!devices[i].name) {
         getDeviceInfo(devices[i].uid, 0);
       }

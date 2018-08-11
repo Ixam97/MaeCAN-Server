@@ -1,6 +1,6 @@
 <div class="button_grid_2">
-    <div class="button button_active">DCC</div>
-    <div class="button">Motorola</div>
+    <div id="button_dcc" class="button button_active" onclick="setProtocol(0)">DCC</div>
+    <div id="button_mm" class="button" onclick="setProtocol(1)">Motorola</div>
 </div>
 <div class="keyboard_grid" id="keyboard_grid">
     <!--<div class="acc button">
@@ -71,17 +71,38 @@
 
 <script src="js/main.js" type="text/javascript"></script>
 <script>
+    var protocol = 0; //0 = DCC, 1 = Motorola
+
+
     for (let i = 1; i <= 16; i++) {
         let acc_button = document.createElement('div');
         acc_button.className = 'acc button';
         let acc_button_content = `
             <div class="acc_indicator">
-                <div onclick="console.log('Set ${i} to 0');"></div>
+                <div onclick="setAcc(${i}, 0);"></div>
                 <div></div>
-                <div onclick="console.log('Set ${i} to 1');"></div>
+                <div onclick="setAcc(${i}, 1);"></div>
             </div>
             <p class="acc_name">${i}</p>`
         acc_button.innerHTML = acc_button_content;
         keyboard_grid.appendChild(acc_button);
+    }
+
+    function setProtocol(_protocol) {
+        if (!_protocol) {
+            //Protokoll auf DCC setzen:
+            button_dcc.className = "button button_active";
+            button_mm.className = "button";
+        } else {
+            //Protokoll auf MM setzen:
+            button_dcc.className = "button";
+            button_mm.className = "button button_active";
+        }
+
+        protocol = _protocol;
+    }
+
+    function setAcc(adr, state) {
+        //Magnetartikel bei klick schalten
     }
 </script>
