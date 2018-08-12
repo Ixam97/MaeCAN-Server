@@ -2,6 +2,14 @@
 
 MäCAN-Sever by Maximilian Goldschmidt
 
+## [2018-08-12.1]
+### Behoben
+- Lokinfo überträgt nun auch Richtung, Geschwindigkeit und aktive Funktionen einer Lokbilder
+
+### Geändert
+- Die interne Verwaltung der Lokliste wurde Geändert
+
+
 ## [2018-08-11.1]
 ### Geändert
 - Die interne Verwaltung der Geräteliste wurde Geändert
